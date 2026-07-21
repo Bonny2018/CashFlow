@@ -107,6 +107,11 @@ export default function App() {
     await loadData();
   };
 
+  const handleResetAllData = async () => {
+    await clearAllStoreData();
+    await loadData();
+  };
+
   const partiesWithBalances = calculatePartyBalances(parties, transactions);
 
   return (
@@ -143,6 +148,7 @@ export default function App() {
                 onOpenNewTransfer={() => { setActiveTab('money-flow'); setIsTransferModalOpen(true); }}
                 onOpenNewParty={() => { setActiveTab('ledger'); setIsPartyModalOpen(true); }}
                 onNavigateTab={setActiveTab}
+                onResetAll={handleResetAllData}
               />
             )}
 

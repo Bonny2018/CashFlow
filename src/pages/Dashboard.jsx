@@ -22,7 +22,8 @@ export default function Dashboard({
   onOpenNewApp, 
   onOpenNewTransfer,
   onOpenNewParty,
-  onNavigateTab 
+  onNavigateTab,
+  onResetAll 
 }) {
   // Financial Calculations
   const totalApplied = applications.reduce((acc, a) => acc + (a.amount_applied || 0), 0);
@@ -37,7 +38,7 @@ export default function Dashboard({
   const totalDecided = allottedCount + notAllottedCount;
   const successRate = totalDecided > 0 ? ((allottedCount / totalDecided) * 100).toFixed(1) : '0.0';
 
-  const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+  const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -75,6 +76,19 @@ export default function Dashboard({
           >
             <FileSpreadsheet className="w-4 h-4 text-indigo-400" />
             <span>Excel Sheet</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('Are you sure you want to clear all data and make all values 0?')) {
+                onResetAll();
+              }
+            }}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-medium transition"
+            title="Clear all data and reset to 0"
+          >
+            <XCircle className="w-4 h-4" />
+            <span>Reset All (00)</span>
           </button>
         </div>
       </div>
