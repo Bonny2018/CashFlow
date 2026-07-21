@@ -93,23 +93,26 @@ export default function App() {
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = userEmail.includes('mohitjain12104@gmail');
+  const isAdmin = Boolean(user && (userEmail.includes('mohitjain12104@gmail') || userEmail === 'admin'));
 
   // Filtering for Regular Users vs Admin
   const scopedParties = React.useMemo(() => {
-    if (isAdmin || !user) return parties;
+    if (isAdmin) return parties;
+    if (!user) return [];
     return parties.filter(p => !p.user_email || p.user_email.trim().toLowerCase() === userEmail);
   }, [parties, userEmail, isAdmin, user]);
 
   const scopedPartyIds = React.useMemo(() => scopedParties.map(p => p.id), [scopedParties]);
 
   const scopedApplications = React.useMemo(() => {
-    if (isAdmin || !user) return applications;
+    if (isAdmin) return applications;
+    if (!user) return [];
     return applications.filter(a => !a.user_email || (a.user_email && a.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(a.party_id));
   }, [applications, scopedPartyIds, userEmail, isAdmin, user]);
 
   const scopedTransactions = React.useMemo(() => {
-    if (isAdmin || !user) return transactions;
+    if (isAdmin) return transactions;
+    if (!user) return [];
     return transactions.filter(t => 
       !t.user_email ||
       (t.user_email && t.user_email.trim().toLowerCase() === userEmail) || 
