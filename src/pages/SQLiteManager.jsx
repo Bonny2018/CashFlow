@@ -8,7 +8,8 @@ export default function SQLiteManager() {
   const checkSQLite = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/data');
+      const host = typeof window !== 'undefined' && window.location && window.location.hostname ? window.location.hostname : 'localhost';
+      const res = await fetch(`http://${host}:3001/api/data`);
       if (res.ok) {
         const data = await res.json();
         setDbInfo(data);

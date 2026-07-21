@@ -1,4 +1,7 @@
-const SQLITE_API_URL = 'http://localhost:3001/api';
+const getApiUrl = () => {
+  const host = typeof window !== 'undefined' && window.location && window.location.hostname ? window.location.hostname : 'localhost';
+  return `http://${host}:3001/api`;
+};
 
 // Local Storage Helper
 const getLocalData = (key, defaultVal = []) => {
@@ -22,7 +25,7 @@ const setLocalData = (key, val) => {
 export const fetchStoreData = async () => {
   // 1. Try SQLite Backend first
   try {
-    const res = await fetch(`${SQLITE_API_URL}/data`);
+    const res = await fetch(`${getApiUrl()}/data`);
     if (res.ok) {
       const data = await res.json();
       if (data.parties && data.ipos) {
@@ -49,7 +52,7 @@ export const fetchStoreData = async () => {
 // CLEAR ALL DATA
 export const clearAllStoreData = async () => {
   try {
-    await fetch(`${SQLITE_API_URL}/reset`, { method: 'POST' });
+    await fetch(`${getApiUrl()}/reset`, { method: 'POST' });
   } catch (e) {}
 
   localStorage.removeItem('IPO_STORE_PARTIES');
@@ -74,7 +77,7 @@ export const saveParty = async (partyData) => {
   };
 
   try {
-    await fetch(`${SQLITE_API_URL}/parties`, {
+    await fetch(`${getApiUrl()}/parties`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newParty)
@@ -93,7 +96,7 @@ export const saveParty = async (partyData) => {
 // DELETE PARTY
 export const deleteParty = async (id) => {
   try {
-    await fetch(`${SQLITE_API_URL}/parties/${id}`, { method: 'DELETE' });
+    await fetch(`${getApiUrl()}/parties/${id}`, { method: 'DELETE' });
   } catch (e) {}
 
   const current = getLocalData('PARTIES', []);
@@ -119,7 +122,7 @@ export const saveIPO = async (ipoData) => {
   };
 
   try {
-    await fetch(`${SQLITE_API_URL}/ipos`, {
+    await fetch(`${getApiUrl()}/ipos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newIPO)
@@ -138,7 +141,7 @@ export const saveIPO = async (ipoData) => {
 // DELETE IPO
 export const deleteIPO = async (id) => {
   try {
-    await fetch(`${SQLITE_API_URL}/ipos/${id}`, { method: 'DELETE' });
+    await fetch(`${getApiUrl()}/ipos/${id}`, { method: 'DELETE' });
   } catch (e) {}
 
   const current = getLocalData('IPOS', []);
@@ -174,7 +177,7 @@ export const saveApplication = async (appData) => {
   };
 
   try {
-    await fetch(`${SQLITE_API_URL}/applications`, {
+    await fetch(`${getApiUrl()}/applications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newApp)
@@ -208,7 +211,7 @@ export const saveApplication = async (appData) => {
 // DELETE APPLICATION
 export const deleteApplication = async (id) => {
   try {
-    await fetch(`${SQLITE_API_URL}/applications/${id}`, { method: 'DELETE' });
+    await fetch(`${getApiUrl()}/applications/${id}`, { method: 'DELETE' });
   } catch (e) {}
 
   const current = getLocalData('APPLICATIONS', []);
@@ -233,7 +236,7 @@ export const saveTransaction = async (txData) => {
   };
 
   try {
-    await fetch(`${SQLITE_API_URL}/transactions`, {
+    await fetch(`${getApiUrl()}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newTx)
@@ -252,7 +255,7 @@ export const saveTransaction = async (txData) => {
 // DELETE TRANSACTION
 export const deleteTransaction = async (id) => {
   try {
-    await fetch(`${SQLITE_API_URL}/transactions/${id}`, { method: 'DELETE' });
+    await fetch(`${getApiUrl()}/transactions/${id}`, { method: 'DELETE' });
   } catch (e) {}
 
   const current = getLocalData('TRANSACTIONS', []);

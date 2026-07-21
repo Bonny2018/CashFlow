@@ -105,12 +105,13 @@ export default function App() {
 
   const scopedApplications = React.useMemo(() => {
     if (isAdmin || !user) return applications;
-    return applications.filter(a => (a.user_email && a.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(a.party_id));
+    return applications.filter(a => !a.user_email || (a.user_email && a.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(a.party_id));
   }, [applications, scopedPartyIds, userEmail, isAdmin, user]);
 
   const scopedTransactions = React.useMemo(() => {
     if (isAdmin || !user) return transactions;
     return transactions.filter(t => 
+      !t.user_email ||
       (t.user_email && t.user_email.trim().toLowerCase() === userEmail) || 
       scopedPartyIds.includes(t.from_party_id) || 
       scopedPartyIds.includes(t.to_party_id)

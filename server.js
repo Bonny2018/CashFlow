@@ -254,6 +254,6 @@ app.delete('/api/transactions/:id', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 IPO SQLite Database Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 IPO SQLite Database Server running at http://0.0.0.0:${PORT}`);
 });
