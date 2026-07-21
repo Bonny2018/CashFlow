@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  TableGrid, 
+  Table, 
   LayoutDashboard, 
   FileSpreadsheet, 
   Users, 
@@ -25,8 +25,9 @@ export default function Navbar({
 }) {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'analytics', label: 'Graphs & Charts', icon: Sparkles, badge: 'NEW' },
     { id: 'excel-grid', label: 'Excel Sheet', icon: FileSpreadsheet, badge: 'PRO' },
-    { id: 'applications', label: 'IPO Applications', icon: TableGrid },
+    { id: 'applications', label: 'IPO Applications', icon: Table },
     { id: 'ledger', label: 'Party Accounts', icon: Users },
     { id: 'money-flow', label: 'Money Come/Go', icon: ArrowRightLeft },
     { id: 'supabase', label: 'Supabase DB', icon: Database }

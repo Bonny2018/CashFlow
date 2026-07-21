@@ -20,6 +20,8 @@ import {
 
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 
+import GraphicalAnalytics from './pages/GraphicalAnalytics';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [user, setUser] = useState(null);
@@ -141,6 +143,15 @@ export default function App() {
                 onOpenNewTransfer={() => { setActiveTab('money-flow'); setIsTransferModalOpen(true); }}
                 onOpenNewParty={() => { setActiveTab('ledger'); setIsPartyModalOpen(true); }}
                 onNavigateTab={setActiveTab}
+              />
+            )}
+
+            {activeTab === 'analytics' && (
+              <GraphicalAnalytics
+                applications={applications}
+                parties={partiesWithBalances}
+                ipos={ipos}
+                transactions={transactions}
               />
             )}
 
