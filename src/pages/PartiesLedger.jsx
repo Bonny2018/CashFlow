@@ -22,8 +22,9 @@ export default function PartiesLedger({
   setIsPartyModalOpen 
 }) {
   const [selectedParty, setSelectedParty] = useState(null);
+  const [editingParty, setEditingParty] = useState(null);
 
-  // Form State for Adding Party
+  // Form State for Adding/Editing Party
   const [name, setName] = useState('');
   const [pan, setPan] = useState('');
   const [dematNo, setDematNo] = useState('');
@@ -34,11 +35,30 @@ export default function PartiesLedger({
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
+  const openAddParty = () => {
+    setEditingParty(null);
+    setName(''); setPan(''); setDematNo(''); setBankName(''); setBankAccount(''); setUpiId(''); setInitialBalance(0);
+    setIsPartyModalOpen(true);
+  };
+
+  const openEditParty = (party) => {
+    setEditingParty(party);
+    setName(party.name || '');
+    setPan(party.pan || '');
+    setDematNo(party.demat_no || '');
+    setBankName(party.bank_name || '');
+    setBankAccount(party.bank_account || '');
+    setUpiId(party.upi_id || '');
+    setInitialBalance(party.initial_balance || 0);
+    setIsPartyModalOpen(true);
+  };
+
   const handleCreateParty = async (e) => {
     e.preventDefault();
     if (!name) return;
 
     await onSaveParty({
+      id: editingParty ? editingParty.id : undefined,
       name,
       pan,
       demat_no: dematNo,
@@ -49,6 +69,7 @@ export default function PartiesLedger({
     });
 
     setIsPartyModalOpen(false);
+    setEditingParty(null);
     setName(''); setPan(''); setDematNo(''); setBankName(''); setBankAccount(''); setUpiId(''); setInitialBalance(0);
   };
 
@@ -68,7 +89,7 @@ export default function PartiesLedger({
         </div>
 
         <button
-          onClick={() => setIsPartyModalOpen(true)}
+          onClick={openAddParty}
           className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
         >
           <Plus className="w-4 h-4" />
@@ -96,13 +117,24 @@ export default function PartiesLedger({
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setSelectedParty(party)}
-                  className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition flex items-center space-x-1 text-xs"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline">Ledger</span>
-                </button>
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => openEditParty(party)}
+                    className="px-2 py-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition text-xs font-semibold flex items-center space-x-1"
+                    title="Edit Party Details & Opening Balance"
+                  >
+                    <span>Edit</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setSelectedParty(party)}
+                    className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition flex items-center space-x-1 text-xs"
+                    title="View Party Ledger"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span className="hidden sm:inline">Ledger</span>
+                  </button>
+                </div>
               </div>
 
               {/* Financial Balance Summary */}
@@ -142,13 +174,15 @@ export default function PartiesLedger({
         })}
       </div>
 
-      {/* MODAL 1: ADD NEW PARTY */}
+      {/* MODAL 1: ADD / EDIT PARTY */}
       {isPartyModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
           <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-display font-semibold text-lg text-white">Add Party Member Profile</h3>
-              <button onClick={() => setIsPartyModalOpen(false)} className="text-slate-400 hover:text-white">
+              <h3 className="font-display font-semibold text-lg text-white">
+                {editingParty ? `Edit Profile: ${editingParty.name}` : 'Add Party Member Profile'}
+              </h3>
+              <button onClick={() => { setIsPartyModalOpen(false); setEditingParty(null); }} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>

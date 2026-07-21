@@ -26,6 +26,7 @@ export default function Applications({
   setIsAppModalOpen 
 }) {
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [editingApp, setEditingApp] = useState(null);
   
   // Status Update Modal State
   const [statusModalApp, setStatusModalApp] = useState(null);
@@ -33,20 +34,46 @@ export default function Applications({
   const [modalLotsAllotted, setModalLotsAllotted] = useState(1);
   const [modalProfit, setModalProfit] = useState(0);
 
-  // New Application Form State
+  // New/Edit Application Form State
   const [selectedPartyId, setSelectedPartyId] = useState(parties[0]?.id || '');
   const [selectedIpoId, setSelectedIpoId] = useState(ipos[0]?.id || '');
   const [lotsApplied, setLotsApplied] = useState(1);
   const [paymentMode, setPaymentMode] = useState('ASBA');
   const [notes, setNotes] = useState('');
   
-  // DateTime state - default to current local system datetime
+  // DateTime state
   const getCurrentLocalDateTime = () => {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
   };
   const [customDateTime, setCustomDateTime] = useState(getCurrentLocalDateTime());
+
+  const openAddApp = () => {
+    setEditingApp(null);
+    setSelectedPartyId(parties[0]?.id || '');
+    setSelectedIpoId(ipos[0]?.id || '');
+    setLotsApplied(1);
+    setPaymentMode('ASBA');
+    setNotes('');
+    setCustomDateTime(getCurrentLocalDateTime());
+    setIsAppModalOpen(true);
+  };
+
+  const openEditApp = (app) => {
+    setEditingApp(app);
+    setSelectedPartyId(app.party_id);
+    setSelectedIpoId(app.ipo_id);
+    setLotsApplied(app.lots_applied || 1);
+    setPaymentMode(app.payment_mode || 'ASBA');
+    setNotes(app.notes || '');
+    if (app.application_date) {
+      const d = new Date(app.application_date);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      setCustomDateTime(d.toISOString().slice(0, 16));
+    }
+    setIsAppModalOpen(true);
+  };
 
   // New IPO Inline State
   const [isAddingNewIpo, setIsAddingNewIpo] = useState(false);
@@ -82,6 +109,7 @@ export default function Applications({
     if (!ipo || !selectedPartyId) return;
 
     await onSaveApplication({
+      id: editingApp ? editingApp.id : undefined,
       party_id: selectedPartyId,
       ipo_id: selectedIpoId,
       lots_applied: parseInt(lotsApplied, 10),
@@ -94,6 +122,7 @@ export default function Applications({
     });
 
     setIsAppModalOpen(false);
+    setEditingApp(null);
     setNotes('');
   };
 
