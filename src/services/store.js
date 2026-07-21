@@ -1,0 +1,539 @@
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+// INITIAL SEED DATA FOR DEMO MODE / LOCAL PERSISTENCE
+const INITIAL_PARTIES = [
+  {
+    id: 'p-1',
+    name: 'Mohit Jain (Self)',
+    pan: 'ABCDE1234F',
+    demat_no: '1208160012345678',
+    bank_name: 'HDFC Bank',
+    bank_account: '5010023456789',
+    upi_id: 'mohit@hdfcbank',
+    initial_balance: 150000,
+    created_at: new Date('2026-07-01T10:00:00').toISOString()
+  },
+  {
+    id: 'p-2',
+    name: 'Ramesh Jain (Papa)',
+    pan: 'FGHIJ5678K',
+    demat_no: '1208160098765432',
+    bank_name: 'ICICI Bank',
+    bank_account: '000401567890',
+    upi_id: 'ramesh@icici',
+    initial_balance: 200000,
+    created_at: new Date('2026-07-02T11:30:00').toISOString()
+  },
+  {
+    id: 'p-3',
+    name: 'Sunita Jain (Mummy)',
+    pan: 'KLMNO9012P',
+    demat_no: '1208160011223344',
+    bank_name: 'SBI Bank',
+    bank_account: '30987654321',
+    upi_id: 'sunita@sbi',
+    initial_balance: 100000,
+    created_at: new Date('2026-07-03T14:15:00').toISOString()
+  },
+  {
+    id: 'p-4',
+    name: 'Apex Capital (Client)',
+    pan: 'QRSTU3456V',
+    demat_no: '1208160055667788',
+    bank_name: 'Axis Bank',
+    bank_account: '918010045612',
+    upi_id: 'apex@axis',
+    initial_balance: 500000,
+    created_at: new Date('2026-07-05T09:00:00').toISOString()
+  },
+  {
+    id: 'p-bank',
+    name: 'Primary Pool Account (Bank)',
+    pan: 'BANKPOOL01',
+    demat_no: 'N/A',
+    bank_name: 'HDFC Master Account',
+    bank_account: '000199998888',
+    upi_id: 'masterpool@hdfc',
+    initial_balance: 1000000,
+    created_at: new Date('2026-07-01T08:00:00').toISOString()
+  }
+];
+
+const INITIAL_IPOS = [
+  {
+    id: 'ipo-1',
+    company_name: 'Waaree Energies Ltd',
+    symbol: 'WAAREE',
+    price_per_share: 1503,
+    lot_size: 9,
+    bidding_start_date: '2026-07-10T10:00:00.000Z',
+    bidding_end_date: '2026-07-15T17:00:00.000Z',
+    allotment_date: '2026-07-18T12:00:00.000Z',
+    listing_date: '2026-07-22T10:00:00.000Z',
+    status: 'ALLOTTED',
+    created_at: '2026-07-08T10:00:00.000Z'
+  },
+  {
+    id: 'ipo-2',
+    company_name: 'Swiggy Limited',
+    symbol: 'SWIGGY',
+    price_per_share: 390,
+    lot_size: 38,
+    bidding_start_date: '2026-07-16T10:00:00.000Z',
+    bidding_end_date: '2026-07-19T17:00:00.000Z',
+    allotment_date: '2026-07-21T12:00:00.000Z',
+    listing_date: '2026-07-24T10:00:00.000Z',
+    status: 'OPEN',
+    created_at: '2026-07-14T10:00:00.000Z'
+  },
+  {
+    id: 'ipo-3',
+    company_name: 'Hyundai Motor India',
+    symbol: 'HYUNDAI',
+    price_per_share: 1960,
+    lot_size: 7,
+    bidding_start_date: '2026-07-01T10:00:00.000Z',
+    bidding_end_date: '2026-07-05T17:00:00.000Z',
+    allotment_date: '2026-07-08T12:00:00.000Z',
+    listing_date: '2026-07-11T10:00:00.000Z',
+    status: 'CLOSED',
+    created_at: '2026-06-25T10:00:00.000Z'
+  }
+];
+
+const INITIAL_APPLICATIONS = [
+  {
+    id: 'app-1',
+    ipo_id: 'ipo-1',
+    party_id: 'p-1',
+    application_no: 'APP-WAAREE-001',
+    lots_applied: 1,
+    shares_applied: 9,
+    amount_applied: 13527,
+    allotment_status: 'ALLOTTED',
+    lots_allotted: 1,
+    shares_allotted: 9,
+    amount_allotted: 13527,
+    refund_amount: 0,
+    profit_loss: 4500,
+    payment_status: 'PAID',
+    application_date: '2026-07-12T14:20:00.000Z',
+    notes: 'Applied via HDFC ASBA'
+  },
+  {
+    id: 'app-2',
+    ipo_id: 'ipo-1',
+    party_id: 'p-2',
+    application_no: 'APP-WAAREE-002',
+    lots_applied: 1,
+    shares_applied: 9,
+    amount_applied: 13527,
+    allotment_status: 'NOT_ALLOTTED',
+    lots_allotted: 0,
+    shares_allotted: 0,
+    amount_allotted: 0,
+    refund_amount: 13527,
+    profit_loss: 0,
+    payment_status: 'REFUNDED',
+    application_date: '2026-07-12T15:00:00.000Z',
+    notes: 'Refund received on 18th July'
+  },
+  {
+    id: 'app-3',
+    ipo_id: 'ipo-2',
+    party_id: 'p-1',
+    application_no: 'APP-SWIGGY-001',
+    lots_applied: 2,
+    shares_applied: 76,
+    amount_applied: 29640,
+    allotment_status: 'PENDING',
+    lots_allotted: 0,
+    shares_allotted: 0,
+    amount_allotted: 0,
+    refund_amount: 0,
+    profit_loss: 0,
+    payment_status: 'PAID',
+    application_date: '2026-07-17T11:45:00.000Z',
+    notes: 'Awaiting allotment status'
+  },
+  {
+    id: 'app-4',
+    ipo_id: 'ipo-2',
+    party_id: 'p-3',
+    application_no: 'APP-SWIGGY-002',
+    lots_applied: 1,
+    shares_applied: 38,
+    amount_applied: 14820,
+    allotment_status: 'PENDING',
+    lots_allotted: 0,
+    shares_allotted: 0,
+    amount_allotted: 0,
+    refund_amount: 0,
+    profit_loss: 0,
+    payment_status: 'PAID',
+    application_date: '2026-07-18T10:10:00.000Z',
+    notes: 'Funds blocked via UPI'
+  }
+];
+
+const INITIAL_TRANSACTIONS = [
+  {
+    id: 'tx-1',
+    application_id: 'app-1',
+    from_party_id: 'p-1',
+    to_party_id: 'p-bank',
+    amount: 13527,
+    transaction_type: 'IPO_APPLICATION',
+    payment_mode: 'ASBA',
+    transaction_date: '2026-07-12T14:20:00.000Z',
+    notes: 'Waaree Energies IPO Application Block'
+  },
+  {
+    id: 'tx-2',
+    application_id: 'app-2',
+    from_party_id: 'p-2',
+    to_party_id: 'p-bank',
+    amount: 13527,
+    transaction_type: 'IPO_APPLICATION',
+    payment_mode: 'UPI',
+    transaction_date: '2026-07-12T15:00:00.000Z',
+    notes: 'Waaree Energies IPO Application Block'
+  },
+  {
+    id: 'tx-3',
+    application_id: 'app-2',
+    from_party_id: 'p-bank',
+    to_party_id: 'p-2',
+    amount: 13527,
+    transaction_type: 'IPO_REFUND',
+    payment_mode: 'UPI',
+    transaction_date: '2026-07-18T16:00:00.000Z',
+    notes: 'Waaree Energies Allotment Unblock Refund'
+  },
+  {
+    id: 'tx-4',
+    application_id: null,
+    from_party_id: 'p-4',
+    to_party_id: 'p-1',
+    amount: 50000,
+    transaction_type: 'DIRECT_TRANSFER',
+    payment_mode: 'NET_BANKING',
+    transaction_date: '2026-07-20T09:30:00.000Z',
+    notes: 'Advance fund transfer from Apex Capital'
+  }
+];
+
+// Local Storage Helper
+const getLocalData = (key, defaultVal) => {
+  try {
+    const data = localStorage.getItem(`IPO_STORE_${key}`);
+    return data ? JSON.parse(data) : defaultVal;
+  } catch (err) {
+    console.error('LocalStorage read error:', err);
+    return defaultVal;
+  }
+};
+
+const setLocalData = (key, val) => {
+  try {
+    localStorage.setItem(`IPO_STORE_${key}`, JSON.stringify(val));
+  } catch (err) {
+    console.error('LocalStorage write error:', err);
+  }
+};
+
+// EXPORTED STORE DATA FETCHERS & MUTATORS
+export const fetchStoreData = async () => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const [pRes, ipoRes, appRes, txRes] = await Promise.all([
+        supabase.from('parties').select('*').order('created_at', { ascending: false }),
+        supabase.from('ipos').select('*').order('created_at', { ascending: false }),
+        supabase.from('ipo_applications').select('*').order('created_at', { ascending: false }),
+        supabase.from('money_transactions').select('*').order('transaction_date', { ascending: false })
+      ]);
+
+      if (!pRes.error && !ipoRes.error && !appRes.error && !txRes.error) {
+        return {
+          parties: pRes.data || [],
+          ipos: ipoRes.data || [],
+          applications: appRes.data || [],
+          transactions: txRes.data || [],
+          isSupabase: true
+        };
+      }
+    } catch (err) {
+      console.warn('Supabase fetch failed, using local storage fallback', err);
+    }
+  }
+
+  // Fallback to local storage
+  const parties = getLocalData('PARTIES', INITIAL_PARTIES);
+  const ipos = getLocalData('IPOS', INITIAL_IPOS);
+  const applications = getLocalData('APPLICATIONS', INITIAL_APPLICATIONS);
+  const transactions = getLocalData('TRANSACTIONS', INITIAL_TRANSACTIONS);
+
+  return { parties, ipos, applications, transactions, isSupabase: false };
+};
+
+// ADD OR UPDATE PARTY
+export const saveParty = async (partyData) => {
+  const newParty = {
+    id: partyData.id || `p-${Date.now()}`,
+    name: partyData.name,
+    pan: partyData.pan || '',
+    demat_no: partyData.demat_no || '',
+    bank_name: partyData.bank_name || '',
+    bank_account: partyData.bank_account || '',
+    upi_id: partyData.upi_id || '',
+    initial_balance: parseFloat(partyData.initial_balance || 0),
+    created_at: partyData.created_at || new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('parties').upsert([newParty]).select();
+    if (error) console.error('Supabase save party error:', error);
+  }
+
+  const current = getLocalData('PARTIES', INITIAL_PARTIES);
+  const index = current.findIndex(p => p.id === newParty.id);
+  if (index >= 0) {
+    current[index] = newParty;
+  } else {
+    current.unshift(newParty);
+  }
+  setLocalData('PARTIES', current);
+  return newParty;
+};
+
+// ADD OR UPDATE IPO
+export const saveIPO = async (ipoData) => {
+  const newIPO = {
+    id: ipoData.id || `ipo-${Date.now()}`,
+    company_name: ipoData.company_name,
+    symbol: ipoData.symbol || '',
+    price_per_share: parseFloat(ipoData.price_per_share || 0),
+    lot_size: parseInt(ipoData.lot_size || 1, 10),
+    bidding_start_date: ipoData.bidding_start_date || new Date().toISOString(),
+    bidding_end_date: ipoData.bidding_end_date || new Date().toISOString(),
+    allotment_date: ipoData.allotment_date || new Date().toISOString(),
+    listing_date: ipoData.listing_date || new Date().toISOString(),
+    status: ipoData.status || 'OPEN',
+    created_at: ipoData.created_at || new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('ipos').upsert([newIPO]);
+  }
+
+  const current = getLocalData('IPOS', INITIAL_IPOS);
+  const index = current.findIndex(i => i.id === newIPO.id);
+  if (index >= 0) {
+    current[index] = newIPO;
+  } else {
+    current.unshift(newIPO);
+  }
+  setLocalData('IPOS', current);
+  return newIPO;
+};
+
+// ADD OR UPDATE IPO APPLICATION WITH MONEY TRANSACTION LINK
+export const saveApplication = async (appData) => {
+  const sharesApplied = parseInt(appData.lots_applied || 1, 10) * parseInt(appData.lot_size || 1, 10);
+  const amountApplied = sharesApplied * parseFloat(appData.price_per_share || 0);
+
+  const appDate = appData.application_date || new Date().toISOString();
+
+  const newApp = {
+    id: appData.id || `app-${Date.now()}`,
+    ipo_id: appData.ipo_id,
+    party_id: appData.party_id,
+    application_no: appData.application_no || `APP-${Math.floor(100000 + Math.random() * 900000)}`,
+    lots_applied: parseInt(appData.lots_applied || 1, 10),
+    shares_applied: sharesApplied,
+    amount_applied: amountApplied,
+    allotment_status: appData.allotment_status || 'PENDING',
+    lots_allotted: parseInt(appData.lots_allotted || 0, 10),
+    shares_allotted: parseInt(appData.shares_allotted || 0, 10),
+    amount_allotted: parseFloat(appData.amount_allotted || 0),
+    refund_amount: parseFloat(appData.refund_amount || 0),
+    profit_loss: parseFloat(appData.profit_loss || 0),
+    payment_status: appData.payment_status || 'PAID',
+    application_date: appDate,
+    notes: appData.notes || '',
+    created_at: appData.created_at || new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('ipo_applications').upsert([newApp]);
+  }
+
+  const currentApps = getLocalData('APPLICATIONS', INITIAL_APPLICATIONS);
+  const isNew = !appData.id;
+  const index = currentApps.findIndex(a => a.id === newApp.id);
+  if (index >= 0) {
+    currentApps[index] = newApp;
+  } else {
+    currentApps.unshift(newApp);
+  }
+  setLocalData('APPLICATIONS', currentApps);
+
+  // If new application, automatically log initial outgoing payment transaction (Party -> Bank Pool)
+  if (isNew) {
+    await saveTransaction({
+      application_id: newApp.id,
+      from_party_id: newApp.party_id,
+      to_party_id: 'p-bank',
+      amount: newApp.amount_applied,
+      transaction_type: 'IPO_APPLICATION',
+      payment_mode: appData.payment_mode || 'ASBA',
+      transaction_date: appDate,
+      notes: `Application payment for ${appData.company_name || 'IPO'}`
+    });
+  }
+
+  return newApp;
+};
+
+// LOG MONEY TRANSACTION (COME & GO)
+export const saveTransaction = async (txData) => {
+  const newTx = {
+    id: txData.id || `tx-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+    application_id: txData.application_id || null,
+    from_party_id: txData.from_party_id,
+    to_party_id: txData.to_party_id,
+    amount: parseFloat(txData.amount || 0),
+    transaction_type: txData.transaction_type || 'DIRECT_TRANSFER',
+    payment_mode: txData.payment_mode || 'UPI',
+    transaction_date: txData.transaction_date || new Date().toISOString(),
+    notes: txData.notes || '',
+    created_at: txData.created_at || new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('money_transactions').upsert([newTx]);
+  }
+
+  const currentTxs = getLocalData('TRANSACTIONS', INITIAL_TRANSACTIONS);
+  const index = currentTxs.findIndex(t => t.id === newTx.id);
+  if (index >= 0) {
+    currentTxs[index] = newTx;
+  } else {
+    currentTxs.unshift(newTx);
+  }
+  setLocalData('TRANSACTIONS', currentTxs);
+  return newTx;
+};
+
+// UPDATE ALLOTMENT STATUS & AUTO CALCULATE MONEY REFUND / PROFIT
+export const updateAllotmentStatus = async (applicationId, status, allottedLots = 0, profit = 0) => {
+  const apps = getLocalData('APPLICATIONS', INITIAL_APPLICATIONS);
+  const ipos = getLocalData('IPOS', INITIAL_IPOS);
+  const app = apps.find(a => a.id === applicationId);
+
+  if (!app) return;
+
+  const ipo = ipos.find(i => i.id === app.ipo_id);
+  const lotSize = ipo ? ipo.lot_size : 1;
+  const price = ipo ? ipo.price_per_share : (app.amount_applied / app.shares_applied);
+
+  let newStatus = status;
+  let lotsAllotted = 0;
+  let sharesAllotted = 0;
+  let amountAllotted = 0;
+  let refundAmount = 0;
+  let profitLoss = parseFloat(profit || 0);
+  let paymentStatus = 'PAID';
+
+  if (status === 'ALLOTTED') {
+    lotsAllotted = allottedLots || app.lots_applied;
+    sharesAllotted = lotsAllotted * lotSize;
+    amountAllotted = sharesAllotted * price;
+    refundAmount = app.amount_applied - amountAllotted;
+  } else if (status === 'NOT_ALLOTTED') {
+    lotsAllotted = 0;
+    sharesAllotted = 0;
+    amountAllotted = 0;
+    refundAmount = app.amount_applied;
+    paymentStatus = 'REFUNDED';
+  }
+
+  app.allotment_status = newStatus;
+  app.lots_allotted = lotsAllotted;
+  app.shares_allotted = sharesAllotted;
+  app.amount_allotted = amountAllotted;
+  app.refund_amount = refundAmount;
+  app.profit_loss = profitLoss;
+  app.payment_status = paymentStatus;
+
+  setLocalData('APPLICATIONS', apps);
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('ipo_applications').update({
+      allotment_status: newStatus,
+      lots_allotted: lotsAllotted,
+      shares_allotted: sharesAllotted,
+      amount_allotted: amountAllotted,
+      refund_amount: refundAmount,
+      profit_loss: profitLoss,
+      payment_status: paymentStatus
+    }).eq('id', applicationId);
+  }
+
+  // Auto-generate money transaction for refund if NOT_ALLOTTED or Partial Allotment
+  if (refundAmount > 0) {
+    await saveTransaction({
+      application_id: app.id,
+      from_party_id: 'p-bank',
+      to_party_id: app.party_id,
+      amount: refundAmount,
+      transaction_type: 'IPO_REFUND',
+      payment_mode: 'ASBA_UNBLOCK',
+      transaction_date: new Date().toISOString(),
+      notes: `Refund received for ${ipo ? ipo.company_name : 'IPO'} (${status})`
+    });
+  }
+
+  // If profit earned, auto-generate profit payout transaction
+  if (profitLoss > 0) {
+    await saveTransaction({
+      application_id: app.id,
+      from_party_id: 'p-bank',
+      to_party_id: app.party_id,
+      amount: profitLoss,
+      transaction_type: 'PROFIT_DISTRIBUTION',
+      payment_mode: 'BANK_CREDIT',
+      transaction_date: new Date().toISOString(),
+      notes: `Listing gain / profit payout for ${ipo ? ipo.company_name : 'IPO'}`
+    });
+  }
+};
+
+// CALCULATE MONEY FLOW LEDGER FOR EACH PARTY
+export const calculatePartyBalances = (parties, transactions) => {
+  return parties.map(party => {
+    let moneyReceived = 0; // Money coming IN to party
+    let moneySent = 0;     // Money going OUT from party
+
+    transactions.forEach(tx => {
+      const amt = parseFloat(tx.amount || 0);
+      if (tx.to_party_id === party.id) {
+        moneyReceived += amt;
+      }
+      if (tx.from_party_id === party.id) {
+        moneySent += amt;
+      }
+    });
+
+    const netCashFlow = moneyReceived - moneySent;
+    const currentBalance = (parseFloat(party.initial_balance || 0)) + netCashFlow;
+
+    return {
+      ...party,
+      moneyReceived,
+      moneySent,
+      netCashFlow,
+      currentBalance
+    };
+  });
+};
