@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { X, Mail, Lock, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
@@ -12,7 +11,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -24,34 +23,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        if (isSignUp) {
-          const { data, error } = await supabase.auth.signUp({ email, password });
-          if (error) throw error;
-          setSuccessMsg('Account created successfully! Check email or sign in.');
-          if (data.user) onAuthSuccess(data.user);
-        } else {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          onAuthSuccess(data.user);
-          onClose();
-        }
-      } catch (err) {
-        setErrorMsg(err.message || 'Authentication failed');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // Demo authentication mode
-      setTimeout(() => {
-        const demoUser = { email, id: `user-${Date.now()}` };
-        localStorage.setItem('IPO_DEMO_USER', JSON.stringify(demoUser));
-        onAuthSuccess(demoUser);
-        setLoading(false);
-        onClose();
-      }, 500);
-    }
+    setTimeout(() => {
+      const localUser = { email, id: `user-${Date.now()}` };
+      localStorage.setItem('IPO_USER_SESSION', JSON.stringify(localUser));
+      onAuthSuccess(localUser);
+      setLoading(false);
+      onClose();
+    }, 400);
   };
 
   return (
@@ -80,13 +58,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-2 text-red-400 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center space-x-2 text-emerald-400 text-xs">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{successMsg}</span>
           </div>
         )}
 

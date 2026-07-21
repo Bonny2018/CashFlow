@@ -6,7 +6,7 @@ import ExcelGrid from './pages/ExcelGrid';
 import Applications from './pages/Applications';
 import PartiesLedger from './pages/PartiesLedger';
 import MoneyFlow from './pages/MoneyFlow';
-import SupabaseSetup from './pages/SupabaseSetup';
+import SQLiteManager from './pages/SQLiteManager';
 
 import { 
   fetchStoreData, 
@@ -200,8 +200,8 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'supabase' && (
-              <SupabaseSetup />
+            {activeTab === 'sqlite' && (
+              <SQLiteManager />
             )}
           </>
         )}

@@ -30,7 +30,7 @@ export default function Navbar({
     { id: 'applications', label: 'IPO Applications', icon: Table },
     { id: 'ledger', label: 'Party Accounts', icon: Users },
     { id: 'money-flow', label: 'Money Come/Go', icon: ArrowRightLeft },
-    { id: 'supabase', label: 'Supabase DB', icon: Database }
+    { id: 'sqlite', label: 'SQLite DB', icon: Database }
   ];
 
   return (
@@ -93,13 +93,13 @@ export default function Navbar({
               <span>Apply IPO</span>
             </button>
 
-            {/* Supabase Status Indicator */}
+            {/* SQLite Status Indicator */}
             <div 
-              onClick={() => setActiveTab('supabase')} 
+              onClick={() => setActiveTab('sqlite')} 
               className="cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border bg-slate-900/80 hover:border-slate-700 transition"
             >
-              <span className={`w-2 h-2 rounded-full ${isSupabase ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-              <span className="text-slate-300">{isSupabase ? 'Supabase Live' : 'Demo Storage'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-slate-300">SQLite DB Active</span>
             </div>
 
             {/* User Login/Account */}
