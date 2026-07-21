@@ -9,6 +9,7 @@ import {
   Lock, 
   LogOut, 
   UserCheck, 
+  ShieldCheck,
   Sparkles,
   Plus
 } from 'lucide-react';
@@ -32,6 +33,9 @@ export default function Navbar({
     { id: 'money-flow', label: 'Money Come/Go', icon: ArrowRightLeft },
     { id: 'sqlite', label: 'SQLite DB', icon: Database }
   ];
+
+  const userEmail = (user?.email || '').trim().toLowerCase();
+  const isAdmin = userEmail.includes('mohitjain12104@gmail');
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
@@ -99,16 +103,29 @@ export default function Navbar({
               className="cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border bg-slate-900/80 hover:border-slate-700 transition"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-slate-300">SQLite DB Active</span>
+              <span className="text-slate-300 hidden sm:inline">SQLite Active</span>
             </div>
 
             {/* User Login/Account */}
             {user ? (
               <div className="flex items-center space-x-2 border-l border-slate-800 pl-3">
-                <div className="flex items-center space-x-2 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg">
-                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-xs font-mono text-slate-300 truncate max-w-[100px]">{user.email}</span>
-                </div>
+                {isAdmin ? (
+                  <div 
+                    title={`Admin Mode: ${user.email}`}
+                    className="flex items-center space-x-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-300"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="text-xs font-semibold font-mono truncate max-w-[110px]">👑 Admin</span>
+                  </div>
+                ) : (
+                  <div 
+                    title={`User: ${user.email}`}
+                    className="flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="text-xs font-mono text-slate-300 truncate max-w-[100px]">{user.email}</span>
+                  </div>
+                )}
                 <button
                   onClick={onLogout}
                   title="Sign Out"

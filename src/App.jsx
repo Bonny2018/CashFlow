@@ -11,11 +11,16 @@ import SQLiteManager from './pages/SQLiteManager';
 import { 
   fetchStoreData, 
   saveParty, 
+  deleteParty,
   saveIPO, 
+  deleteIPO,
   saveApplication, 
+  deleteApplication,
   saveTransaction, 
+  deleteTransaction,
   updateAllotmentStatus, 
-  calculatePartyBalances 
+  calculatePartyBalances,
+  clearAllStoreData
 } from './services/store';
 
 import { supabase, isSupabaseConfigured } from './lib/supabase';
@@ -67,8 +72,13 @@ export default function App() {
 
       return () => subscription.unsubscribe();
     } else {
-      const demoUser = localStorage.getItem('IPO_DEMO_USER');
-      if (demoUser) setUser(JSON.parse(demoUser));
+      const demoUser = localStorage.getItem('IPO_USER_SESSION') || localStorage.getItem('IPO_DEMO_USER');
+      if (demoUser) {
+        setUser(JSON.parse(demoUser));
+      } else {
+        // Auto open login modal if no user logged in
+        setIsAuthOpen(true);
+      }
     }
   }, []);
 
@@ -76,43 +86,105 @@ export default function App() {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
+    localStorage.removeItem('IPO_USER_SESSION');
     localStorage.removeItem('IPO_DEMO_USER');
     setUser(null);
+    setIsAuthOpen(true);
   };
+
+  const userEmail = (user?.email || '').trim().toLowerCase();
+  const isAdmin = userEmail.includes('mohitjain12104@gmail');
+
+  // Filtering for Regular Users vs Admin
+  const scopedParties = React.useMemo(() => {
+    if (isAdmin || !user) return parties;
+    return parties.filter(p => !p.user_email || p.user_email.trim().toLowerCase() === userEmail);
+  }, [parties, userEmail, isAdmin, user]);
+
+  const scopedPartyIds = React.useMemo(() => scopedParties.map(p => p.id), [scopedParties]);
+
+  const scopedApplications = React.useMemo(() => {
+    if (isAdmin || !user) return applications;
+    return applications.filter(a => (a.user_email && a.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(a.party_id));
+  }, [applications, scopedPartyIds, userEmail, isAdmin, user]);
+
+  const scopedTransactions = React.useMemo(() => {
+    if (isAdmin || !user) return transactions;
+    return transactions.filter(t => 
+      (t.user_email && t.user_email.trim().toLowerCase() === userEmail) || 
+      scopedPartyIds.includes(t.from_party_id) || 
+      scopedPartyIds.includes(t.to_party_id)
+    );
+  }, [transactions, scopedPartyIds, userEmail, isAdmin, user]);
+
+  const partiesWithBalances = calculatePartyBalances(scopedParties, scopedTransactions);
 
   // Handlers for store updates
   const handleSaveParty = async (partyData) => {
-    await saveParty(partyData);
+    await saveParty({ ...partyData, user_email: partyData.user_email || user?.email });
+    await loadData();
+  };
+
+  const handleDeleteParty = async (id) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete party accounts.');
+      return;
+    }
+    await deleteParty(id);
     await loadData();
   };
 
   const handleSaveIPO = async (ipoData) => {
-    const ipo = await saveIPO(ipoData);
+    const ipo = await saveIPO({ ...ipoData, user_email: ipoData.user_email || user?.email });
     await loadData();
     return ipo;
   };
 
   const handleSaveApplication = async (appData) => {
-    await saveApplication(appData);
+    await saveApplication({ ...appData, user_email: appData.user_email || user?.email });
+    await loadData();
+  };
+
+  const handleDeleteApplication = async (id) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete applications.');
+      return;
+    }
+    await deleteApplication(id);
     await loadData();
   };
 
   const handleSaveTransaction = async (txData) => {
-    await saveTransaction(txData);
+    await saveTransaction({ ...txData, user_email: txData.user_email || user?.email });
+    await loadData();
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete transactions.');
+      return;
+    }
+    await deleteTransaction(id);
     await loadData();
   };
 
   const handleUpdateStatus = async (appId, status, allottedLots, profit) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to update allotment results.');
+      return;
+    }
     await updateAllotmentStatus(appId, status, allottedLots, profit);
     await loadData();
   };
 
   const handleResetAllData = async () => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to wipe system data.');
+      return;
+    }
     await clearAllStoreData();
     await loadData();
   };
-
-  const partiesWithBalances = calculatePartyBalances(parties, transactions);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
@@ -142,8 +214,10 @@ export default function App() {
               <Dashboard 
                 parties={partiesWithBalances}
                 ipos={ipos}
-                applications={applications}
-                transactions={transactions}
+                applications={scopedApplications}
+                transactions={scopedTransactions}
+                user={user}
+                isAdmin={isAdmin}
                 onOpenNewApp={() => { setActiveTab('applications'); setIsAppModalOpen(true); }}
                 onOpenNewTransfer={() => { setActiveTab('money-flow'); setIsTransferModalOpen(true); }}
                 onOpenNewParty={() => { setActiveTab('ledger'); setIsPartyModalOpen(true); }}
@@ -154,29 +228,33 @@ export default function App() {
 
             {activeTab === 'analytics' && (
               <GraphicalAnalytics
-                applications={applications}
+                applications={scopedApplications}
                 parties={partiesWithBalances}
                 ipos={ipos}
-                transactions={transactions}
+                transactions={scopedTransactions}
               />
             )}
 
             {activeTab === 'excel-grid' && (
               <ExcelGrid 
-                applications={applications}
-                parties={parties}
+                applications={scopedApplications}
+                parties={scopedParties}
                 ipos={ipos}
+                isAdmin={isAdmin}
                 onUpdateStatus={handleUpdateStatus}
+                onDeleteApplication={handleDeleteApplication}
                 onOpenNewApp={() => { setActiveTab('applications'); setIsAppModalOpen(true); }}
               />
             )}
 
             {activeTab === 'applications' && (
               <Applications 
-                applications={applications}
-                parties={parties}
+                applications={scopedApplications}
+                parties={scopedParties}
                 ipos={ipos}
+                isAdmin={isAdmin}
                 onSaveApplication={handleSaveApplication}
+                onDeleteApplication={handleDeleteApplication}
                 onUpdateStatus={handleUpdateStatus}
                 onSaveIPO={handleSaveIPO}
                 isAppModalOpen={isAppModalOpen}
@@ -187,10 +265,12 @@ export default function App() {
             {activeTab === 'ledger' && (
               <PartiesLedger 
                 partiesWithBalances={partiesWithBalances}
-                transactions={transactions}
+                transactions={scopedTransactions}
                 ipos={ipos}
-                applications={applications}
+                applications={scopedApplications}
+                isAdmin={isAdmin}
                 onSaveParty={handleSaveParty}
+                onDeleteParty={handleDeleteParty}
                 isPartyModalOpen={isPartyModalOpen}
                 setIsPartyModalOpen={setIsPartyModalOpen}
               />
@@ -198,9 +278,11 @@ export default function App() {
 
             {activeTab === 'money-flow' && (
               <MoneyFlow 
-                transactions={transactions}
-                parties={parties}
+                transactions={scopedTransactions}
+                parties={scopedParties}
+                isAdmin={isAdmin}
                 onSaveTransaction={handleSaveTransaction}
+                onDeleteTransaction={handleDeleteTransaction}
                 isTransferModalOpen={isTransferModalOpen}
                 setIsTransferModalOpen={setIsTransferModalOpen}
               />

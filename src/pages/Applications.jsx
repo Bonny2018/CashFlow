@@ -12,14 +12,17 @@ import {
   Edit3, 
   Check, 
   X,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 
 export default function Applications({ 
   applications, 
   parties, 
   ipos, 
+  isAdmin,
   onSaveApplication, 
+  onDeleteApplication,
   onUpdateStatus,
   onSaveIPO,
   isAppModalOpen,
@@ -48,6 +51,16 @@ export default function Applications({
     return now.toISOString().slice(0, 16);
   };
   const [customDateTime, setCustomDateTime] = useState(getCurrentLocalDateTime());
+
+  const handleDeleteApp = async (app) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete applications.');
+      return;
+    }
+    if (window.confirm('Are you sure you want to delete this IPO application?')) {
+      await onDeleteApplication(app.id);
+    }
+  };
 
   const openAddApp = () => {
     setEditingApp(null);
@@ -246,18 +259,37 @@ export default function Applications({
                   <span>{new Date(app.application_date).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                 </span>
 
-                <button
-                  onClick={() => {
-                    setStatusModalApp(app);
-                    setModalStatus(app.allotment_status === 'PENDING' ? 'ALLOTTED' : app.allotment_status);
-                    setModalLotsAllotted(app.lots_applied);
-                    setModalProfit(app.profit_loss || 0);
-                  }}
-                  className="flex items-center space-x-1 text-emerald-400 font-semibold hover:underline"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>Update Allotment</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  {isAdmin ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setStatusModalApp(app);
+                          setModalStatus(app.allotment_status === 'PENDING' ? 'ALLOTTED' : app.allotment_status);
+                          setModalLotsAllotted(app.lots_applied);
+                          setModalProfit(app.profit_loss || 0);
+                        }}
+                        className="flex items-center space-x-1 text-emerald-400 font-semibold hover:underline"
+                        title="Admin: Update Allotment Result"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Update Result</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteApp(app)}
+                        className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition"
+                        title="Admin Only: Delete Application"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800" title="Only Admin (mohitjain12104@gmail.com) can update or delete">
+                      Locked
+                    </span>
+                  )}
+                </div>
               </div>
 
             </div>

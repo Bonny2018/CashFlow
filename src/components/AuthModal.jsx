@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Mail, Lock, Sparkles, AlertCircle, ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [email, setEmail] = useState('');
@@ -7,16 +7,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleLogin = (loginEmail, loginPassword) => {
     setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!email || !password) {
+    if (!loginEmail || !loginPassword) {
       setErrorMsg('Please enter both email and password');
       return;
     }
@@ -24,26 +20,45 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setLoading(true);
 
     setTimeout(() => {
-      const localUser = { email, id: `user-${Date.now()}` };
+      const cleanEmail = loginEmail.trim().toLowerCase();
+      const localUser = { email: cleanEmail, id: `user-${Date.now()}` };
       localStorage.setItem('IPO_USER_SESSION', JSON.stringify(localUser));
+      localStorage.setItem('IPO_DEMO_USER', JSON.stringify(localUser));
       onAuthSuccess(localUser);
       setLoading(false);
       onClose();
-    }, 400);
+    }, 300);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleLogin(email, password);
+  };
+
+  const handleQuickLoginAdmin = () => {
+    setEmail('mohitjain12104@gmail.com');
+    setPassword('admin123');
+    handleLogin('mohitjain12104@gmail.com', 'admin123');
+  };
+
+  const handleQuickLoginMember = () => {
+    setEmail('member1@gmail.com');
+    setPassword('user123');
+    handleLogin('member1@gmail.com', 'user123');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl overflow-hidden">
         
         {/* Decorative Top Glow */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-500" />
         
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center space-x-2">
             <Lock className="w-5 h-5 text-emerald-400" />
             <h3 className="font-display font-semibold text-lg text-white">
-              {isSignUp ? 'Create IPO Ledger Account' : 'Sign In to IPO Ledger'}
+              {isSignUp ? 'Create IPO Ledger Account' : 'Sign In with Email & Password'}
             </h3>
           </div>
           <button 
@@ -54,6 +69,36 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </button>
         </div>
 
+        {/* Quick Demo Login Presets */}
+        <div className="mt-4 p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+          <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Quick Direct Logins:</span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleQuickLoginAdmin}
+              className="px-2.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-left transition flex items-center space-x-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="truncate">
+                <span className="text-xs font-bold text-amber-300 block truncate">Admin</span>
+                <span className="text-[10px] text-slate-400 font-mono block truncate">mohitjain12104@gmail.com</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleQuickLoginMember}
+              className="px-2.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-left transition flex items-center space-x-2"
+            >
+              <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="truncate">
+                <span className="text-xs font-bold text-emerald-300 block truncate">User / Member</span>
+                <span className="text-[10px] text-slate-400 font-mono block truncate">member1@gmail.com</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
         {errorMsg && (
           <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-2 text-red-400 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -61,7 +106,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
             <div className="relative">
@@ -70,7 +115,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
+                placeholder="mohitjain12104@gmail.com or user@domain.com"
                 required
                 className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
               />
@@ -108,10 +153,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </button>
         </form>
 
-        <div className="mt-5 text-center pt-4 border-t border-slate-800 text-xs text-slate-400">
+        <div className="mt-4 text-center pt-3 border-t border-slate-800 text-xs text-slate-400">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
-            onClick={() => { setIsSignUp(!isSignUp); setErrorMsg(''); setSuccessMsg(''); }}
+            onClick={() => { setIsSignUp(!isSignUp); setErrorMsg(''); }}
             className="text-emerald-400 font-semibold hover:underline"
           >
             {isSignUp ? 'Sign In' : 'Create One'}

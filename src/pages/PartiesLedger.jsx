@@ -9,7 +9,8 @@ import {
   FileText, 
   Eye, 
   X,
-  Wallet
+  Wallet,
+  Trash2
 } from 'lucide-react';
 
 export default function PartiesLedger({ 
@@ -17,7 +18,9 @@ export default function PartiesLedger({
   transactions, 
   ipos,
   applications,
+  isAdmin,
   onSaveParty, 
+  onDeleteParty,
   isPartyModalOpen, 
   setIsPartyModalOpen 
 }) {
@@ -42,6 +45,10 @@ export default function PartiesLedger({
   };
 
   const openEditParty = (party) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to edit party accounts.');
+      return;
+    }
     setEditingParty(party);
     setName(party.name || '');
     setPan(party.pan || '');
@@ -51,6 +58,16 @@ export default function PartiesLedger({
     setUpiId(party.upi_id || '');
     setInitialBalance(party.initial_balance || 0);
     setIsPartyModalOpen(true);
+  };
+
+  const handleDelete = async (party) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete party members.');
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete ${party.name}?`)) {
+      await onDeleteParty(party.id);
+    }
   };
 
   const handleCreateParty = async (e) => {
@@ -118,13 +135,32 @@ export default function PartiesLedger({
                 </div>
 
                 <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => openEditParty(party)}
-                    className="px-2 py-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition text-xs font-semibold flex items-center space-x-1"
-                    title="Edit Party Details & Opening Balance"
-                  >
-                    <span>Edit</span>
-                  </button>
+                  {isAdmin ? (
+                    <>
+                      <button
+                        onClick={() => openEditParty(party)}
+                        className="px-2 py-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition text-xs font-semibold"
+                        title="Edit Party Details"
+                      >
+                        Edit
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDelete(party)}
+                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition text-xs"
+                        title="Admin Only: Delete Party"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <span 
+                      className="text-[10px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800"
+                      title="Only Admin (mohitjain12104@gmail.com) can edit or delete"
+                    >
+                      View Only
+                    </span>
+                  )}
                   
                   <button
                     onClick={() => setSelectedParty(party)}

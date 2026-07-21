@@ -19,6 +19,8 @@ export default function Dashboard({
   ipos, 
   applications, 
   transactions, 
+  user,
+  isAdmin,
   onOpenNewApp, 
   onOpenNewTransfer,
   onOpenNewParty,
@@ -50,7 +52,9 @@ export default function Dashboard({
             <h1 className="font-display font-bold text-2xl text-white">IPO Overview & Money Flow</h1>
             <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">Live Dashboard</span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Track party funds, allotment decisions, and real-time cash flow balances</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {isAdmin ? '👑 Admin Mode: Full System Visibility across all members' : `👤 Logged in as: ${user?.email || 'User'} (Your Data View)`}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -78,18 +82,20 @@ export default function Dashboard({
             <span>Excel Sheet</span>
           </button>
 
-          <button
-            onClick={() => {
-              if (window.confirm('Are you sure you want to clear all data and make all values 0?')) {
-                onResetAll();
-              }
-            }}
-            className="flex items-center space-x-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-medium transition"
-            title="Clear all data and reset to 0"
-          >
-            <XCircle className="w-4 h-4" />
-            <span>Reset All (00)</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to clear all data and make all values 0?')) {
+                  onResetAll();
+                }
+              }}
+              className="flex items-center space-x-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-medium transition"
+              title="Admin Only: Clear all data and reset to 0"
+            >
+              <XCircle className="w-4 h-4" />
+              <span>Reset All (00)</span>
+            </button>
+          )}
         </div>
       </div>
 

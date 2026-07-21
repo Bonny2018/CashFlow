@@ -62,6 +62,7 @@ export const clearAllStoreData = async () => {
 export const saveParty = async (partyData) => {
   const newParty = {
     id: partyData.id || `p-${Date.now()}`,
+    user_email: partyData.user_email || null,
     name: partyData.name,
     pan: partyData.pan || '',
     demat_no: partyData.demat_no || '',
@@ -89,10 +90,22 @@ export const saveParty = async (partyData) => {
   return newParty;
 };
 
+// DELETE PARTY
+export const deleteParty = async (id) => {
+  try {
+    await fetch(`${SQLITE_API_URL}/parties/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  const current = getLocalData('PARTIES', []);
+  const updated = current.filter(p => p.id !== id);
+  setLocalData('PARTIES', updated);
+};
+
 // SAVE IPO
 export const saveIPO = async (ipoData) => {
   const newIPO = {
     id: ipoData.id || `ipo-${Date.now()}`,
+    user_email: ipoData.user_email || null,
     company_name: ipoData.company_name,
     symbol: ipoData.symbol || '',
     price_per_share: parseFloat(ipoData.price_per_share || 0),
@@ -122,6 +135,17 @@ export const saveIPO = async (ipoData) => {
   return newIPO;
 };
 
+// DELETE IPO
+export const deleteIPO = async (id) => {
+  try {
+    await fetch(`${SQLITE_API_URL}/ipos/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  const current = getLocalData('IPOS', []);
+  const updated = current.filter(i => i.id !== id);
+  setLocalData('IPOS', updated);
+};
+
 // SAVE APPLICATION
 export const saveApplication = async (appData) => {
   const sharesApplied = parseInt(appData.lots_applied || 1, 10) * parseInt(appData.lot_size || 1, 10);
@@ -130,6 +154,7 @@ export const saveApplication = async (appData) => {
 
   const newApp = {
     id: appData.id || `app-${Date.now()}`,
+    user_email: appData.user_email || null,
     ipo_id: appData.ipo_id,
     party_id: appData.party_id,
     application_no: appData.application_no || `APP-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -165,6 +190,7 @@ export const saveApplication = async (appData) => {
 
   if (isNew) {
     await saveTransaction({
+      user_email: newApp.user_email,
       application_id: newApp.id,
       from_party_id: newApp.party_id,
       to_party_id: 'p-bank',
@@ -179,10 +205,22 @@ export const saveApplication = async (appData) => {
   return newApp;
 };
 
+// DELETE APPLICATION
+export const deleteApplication = async (id) => {
+  try {
+    await fetch(`${SQLITE_API_URL}/applications/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  const current = getLocalData('APPLICATIONS', []);
+  const updated = current.filter(a => a.id !== id);
+  setLocalData('APPLICATIONS', updated);
+};
+
 // SAVE TRANSACTION
 export const saveTransaction = async (txData) => {
   const newTx = {
     id: txData.id || `tx-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+    user_email: txData.user_email || null,
     application_id: txData.application_id || null,
     from_party_id: txData.from_party_id,
     to_party_id: txData.to_party_id,
@@ -209,6 +247,17 @@ export const saveTransaction = async (txData) => {
   setLocalData('TRANSACTIONS', currentTxs);
 
   return newTx;
+};
+
+// DELETE TRANSACTION
+export const deleteTransaction = async (id) => {
+  try {
+    await fetch(`${SQLITE_API_URL}/transactions/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  const current = getLocalData('TRANSACTIONS', []);
+  const updated = current.filter(t => t.id !== id);
+  setLocalData('TRANSACTIONS', updated);
 };
 
 // UPDATE ALLOTMENT STATUS

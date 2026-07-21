@@ -10,14 +10,17 @@ import {
   Clock, 
   Plus, 
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 
 export default function ExcelGrid({ 
   applications, 
   parties, 
   ipos, 
+  isAdmin,
   onUpdateStatus, 
+  onDeleteApplication,
   onOpenNewApp 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +28,16 @@ export default function ExcelGrid({
   const [partyFilter, setPartyFilter] = useState('ALL');
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
+
+  const handleDeleteApp = async (appId) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete applications.');
+      return;
+    }
+    if (window.confirm('Are you sure you want to delete this row?')) {
+      await onDeleteApplication(appId);
+    }
+  };
 
   // Filtered Rows
   const filteredRows = applications.filter((app) => {
@@ -227,22 +240,35 @@ export default function ExcelGrid({
                         {app.notes || '-'}
                       </td>
                       <td className="text-center font-sans">
-                        <div className="flex items-center justify-center space-x-1">
-                          <button
-                            onClick={() => onUpdateStatus(app.id, 'ALLOTTED', app.lots_applied, 3000)}
-                            title="Mark Allotted"
-                            className="p-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => onUpdateStatus(app.id, 'NOT_ALLOTTED')}
-                            title="Mark Not Allotted / Refund"
-                            className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {isAdmin ? (
+                          <div className="flex items-center justify-center space-x-1">
+                            <button
+                              onClick={() => onUpdateStatus(app.id, 'ALLOTTED', app.lots_applied, 3000)}
+                              title="Admin: Mark Allotted"
+                              className="p-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onUpdateStatus(app.id, 'NOT_ALLOTTED')}
+                              title="Admin: Mark Not Allotted / Refund"
+                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteApp(app.id)}
+                              title="Admin Only: Delete Record"
+                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800" title="Only Admin (mohitjain12104@gmail.com) can update or delete">
+                            Locked
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

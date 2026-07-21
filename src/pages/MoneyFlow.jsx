@@ -10,13 +10,16 @@ import {
   DollarSign, 
   X,
   CreditCard,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 
 export default function MoneyFlow({ 
   transactions, 
   parties, 
+  isAdmin,
   onSaveTransaction,
+  onDeleteTransaction,
   isTransferModalOpen,
   setIsTransferModalOpen
 }) {
@@ -36,6 +39,16 @@ export default function MoneyFlow({
   const [customDateTime, setCustomDateTime] = useState(getCurrentLocalDateTime());
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
+
+  const handleDeleteTx = async (tx) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete transactions.');
+      return;
+    }
+    if (window.confirm('Are you sure you want to delete this money transfer transaction?')) {
+      await onDeleteTransaction(tx.id);
+    }
+  };
 
   const handleSubmitTransfer = async (e) => {
     e.preventDefault();
@@ -87,6 +100,7 @@ export default function MoneyFlow({
                 <th className="py-3 px-4 text-right">Amount (₹)</th>
                 <th className="py-3 px-4 text-center">Mode</th>
                 <th className="py-3 px-4">Notes</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/40 text-xs">
@@ -125,6 +139,21 @@ export default function MoneyFlow({
                     </td>
                     <td className="py-3 px-4 text-slate-400 text-[11px] truncate max-w-[200px]" title={tx.notes}>
                       {tx.notes || '-'}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {isAdmin ? (
+                        <button
+                          onClick={() => handleDeleteTx(tx)}
+                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition"
+                          title="Admin Only: Delete Transaction"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 font-mono" title="Only Admin (mohitjain12104@gmail.com) can delete">
+                          Locked
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
