@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-// INITIAL SEED DATA FOR DEMO MODE / LOCAL PERSISTENCE
+const SQLITE_API_URL = 'http://localhost:3001/api';
+
+// INITIAL SEED DATA FOR LOCAL FALLBACK
 const INITIAL_PARTIES = [
   {
     id: 'p-1',
@@ -229,7 +231,6 @@ const getLocalData = (key, defaultVal) => {
     const data = localStorage.getItem(`IPO_STORE_${key}`);
     return data ? JSON.parse(data) : defaultVal;
   } catch (err) {
-    console.error('LocalStorage read error:', err);
     return defaultVal;
   }
 };
@@ -238,12 +239,32 @@ const setLocalData = (key, val) => {
   try {
     localStorage.setItem(`IPO_STORE_${key}`, JSON.stringify(val));
   } catch (err) {
-    console.error('LocalStorage write error:', err);
+    console.error('LocalStorage error:', err);
   }
 };
 
 // EXPORTED STORE DATA FETCHERS & MUTATORS
 export const fetchStoreData = async () => {
+  // 1. Try SQLite Backend first
+  try {
+    const res = await fetch(`${SQLITE_API_URL}/data`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.parties && data.ipos) {
+        return {
+          parties: data.parties,
+          ipos: data.ipos,
+          applications: data.applications,
+          transactions: data.transactions,
+          dbType: 'SQLite (ipo_ledger.db)'
+        };
+      }
+    }
+  } catch (e) {
+    // SQLite offline, check Supabase or Local Storage
+  }
+
+  // 2. Try Supabase
   if (isSupabaseConfigured && supabase) {
     try {
       const [pRes, ipoRes, appRes, txRes] = await Promise.all([
@@ -253,30 +274,30 @@ export const fetchStoreData = async () => {
         supabase.from('money_transactions').select('*').order('transaction_date', { ascending: false })
       ]);
 
-      if (!pRes.error && !ipoRes.error && !appRes.error && !txRes.error) {
+      if (!pRes.error && !ipoRes.error) {
         return {
           parties: pRes.data || [],
           ipos: ipoRes.data || [],
           applications: appRes.data || [],
           transactions: txRes.data || [],
-          isSupabase: true
+          dbType: 'Supabase Cloud'
         };
       }
     } catch (err) {
-      console.warn('Supabase fetch failed, using local storage fallback', err);
+      console.warn('Supabase fetch failed', err);
     }
   }
 
-  // Fallback to local storage
+  // 3. Fallback to LocalStorage
   const parties = getLocalData('PARTIES', INITIAL_PARTIES);
   const ipos = getLocalData('IPOS', INITIAL_IPOS);
   const applications = getLocalData('APPLICATIONS', INITIAL_APPLICATIONS);
   const transactions = getLocalData('TRANSACTIONS', INITIAL_TRANSACTIONS);
 
-  return { parties, ipos, applications, transactions, isSupabase: false };
+  return { parties, ipos, applications, transactions, dbType: 'Local Demo Storage' };
 };
 
-// ADD OR UPDATE PARTY
+// SAVE PARTY
 export const saveParty = async (partyData) => {
   const newParty = {
     id: partyData.id || `p-${Date.now()}`,
@@ -290,23 +311,28 @@ export const saveParty = async (partyData) => {
     created_at: partyData.created_at || new Date().toISOString()
   };
 
+  try {
+    await fetch(`${SQLITE_API_URL}/parties`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newParty)
+    });
+  } catch (e) {}
+
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.from('parties').upsert([newParty]).select();
-    if (error) console.error('Supabase save party error:', error);
+    await supabase.from('parties').upsert([newParty]);
   }
 
   const current = getLocalData('PARTIES', INITIAL_PARTIES);
   const index = current.findIndex(p => p.id === newParty.id);
-  if (index >= 0) {
-    current[index] = newParty;
-  } else {
-    current.unshift(newParty);
-  }
+  if (index >= 0) current[index] = newParty;
+  else current.unshift(newParty);
   setLocalData('PARTIES', current);
+
   return newParty;
 };
 
-// ADD OR UPDATE IPO
+// SAVE IPO
 export const saveIPO = async (ipoData) => {
   const newIPO = {
     id: ipoData.id || `ipo-${Date.now()}`,
@@ -322,26 +348,31 @@ export const saveIPO = async (ipoData) => {
     created_at: ipoData.created_at || new Date().toISOString()
   };
 
+  try {
+    await fetch(`${SQLITE_API_URL}/ipos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newIPO)
+    });
+  } catch (e) {}
+
   if (isSupabaseConfigured && supabase) {
     await supabase.from('ipos').upsert([newIPO]);
   }
 
   const current = getLocalData('IPOS', INITIAL_IPOS);
   const index = current.findIndex(i => i.id === newIPO.id);
-  if (index >= 0) {
-    current[index] = newIPO;
-  } else {
-    current.unshift(newIPO);
-  }
+  if (index >= 0) current[index] = newIPO;
+  else current.unshift(newIPO);
   setLocalData('IPOS', current);
+
   return newIPO;
 };
 
-// ADD OR UPDATE IPO APPLICATION WITH MONEY TRANSACTION LINK
+// SAVE APPLICATION
 export const saveApplication = async (appData) => {
   const sharesApplied = parseInt(appData.lots_applied || 1, 10) * parseInt(appData.lot_size || 1, 10);
   const amountApplied = sharesApplied * parseFloat(appData.price_per_share || 0);
-
   const appDate = appData.application_date || new Date().toISOString();
 
   const newApp = {
@@ -364,6 +395,14 @@ export const saveApplication = async (appData) => {
     created_at: appData.created_at || new Date().toISOString()
   };
 
+  try {
+    await fetch(`${SQLITE_API_URL}/applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newApp)
+    });
+  } catch (e) {}
+
   if (isSupabaseConfigured && supabase) {
     await supabase.from('ipo_applications').upsert([newApp]);
   }
@@ -371,14 +410,10 @@ export const saveApplication = async (appData) => {
   const currentApps = getLocalData('APPLICATIONS', INITIAL_APPLICATIONS);
   const isNew = !appData.id;
   const index = currentApps.findIndex(a => a.id === newApp.id);
-  if (index >= 0) {
-    currentApps[index] = newApp;
-  } else {
-    currentApps.unshift(newApp);
-  }
+  if (index >= 0) currentApps[index] = newApp;
+  else currentApps.unshift(newApp);
   setLocalData('APPLICATIONS', currentApps);
 
-  // If new application, automatically log initial outgoing payment transaction (Party -> Bank Pool)
   if (isNew) {
     await saveTransaction({
       application_id: newApp.id,
@@ -395,7 +430,7 @@ export const saveApplication = async (appData) => {
   return newApp;
 };
 
-// LOG MONEY TRANSACTION (COME & GO)
+// SAVE TRANSACTION
 export const saveTransaction = async (txData) => {
   const newTx = {
     id: txData.id || `tx-${Date.now()}-${Math.floor(Math.random()*1000)}`,
@@ -410,22 +445,28 @@ export const saveTransaction = async (txData) => {
     created_at: txData.created_at || new Date().toISOString()
   };
 
+  try {
+    await fetch(`${SQLITE_API_URL}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTx)
+    });
+  } catch (e) {}
+
   if (isSupabaseConfigured && supabase) {
     await supabase.from('money_transactions').upsert([newTx]);
   }
 
   const currentTxs = getLocalData('TRANSACTIONS', INITIAL_TRANSACTIONS);
   const index = currentTxs.findIndex(t => t.id === newTx.id);
-  if (index >= 0) {
-    currentTxs[index] = newTx;
-  } else {
-    currentTxs.unshift(newTx);
-  }
+  if (index >= 0) currentTxs[index] = newTx;
+  else currentTxs.unshift(newTx);
   setLocalData('TRANSACTIONS', currentTxs);
+
   return newTx;
 };
 
-// UPDATE ALLOTMENT STATUS & AUTO CALCULATE MONEY REFUND / PROFIT
+// UPDATE ALLOTMENT STATUS
 export const updateAllotmentStatus = async (applicationId, status, allottedLots = 0, profit = 0) => {
   const apps = getLocalData('APPLICATIONS', INITIAL_APPLICATIONS);
   const ipos = getLocalData('IPOS', INITIAL_IPOS);
@@ -437,7 +478,6 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
   const lotSize = ipo ? ipo.lot_size : 1;
   const price = ipo ? ipo.price_per_share : (app.amount_applied / app.shares_applied);
 
-  let newStatus = status;
   let lotsAllotted = 0;
   let sharesAllotted = 0;
   let amountAllotted = 0;
@@ -458,7 +498,7 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
     paymentStatus = 'REFUNDED';
   }
 
-  app.allotment_status = newStatus;
+  app.allotment_status = status;
   app.lots_allotted = lotsAllotted;
   app.shares_allotted = sharesAllotted;
   app.amount_allotted = amountAllotted;
@@ -466,21 +506,8 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
   app.profit_loss = profitLoss;
   app.payment_status = paymentStatus;
 
-  setLocalData('APPLICATIONS', apps);
+  await saveApplication(app);
 
-  if (isSupabaseConfigured && supabase) {
-    await supabase.from('ipo_applications').update({
-      allotment_status: newStatus,
-      lots_allotted: lotsAllotted,
-      shares_allotted: sharesAllotted,
-      amount_allotted: amountAllotted,
-      refund_amount: refundAmount,
-      profit_loss: profitLoss,
-      payment_status: paymentStatus
-    }).eq('id', applicationId);
-  }
-
-  // Auto-generate money transaction for refund if NOT_ALLOTTED or Partial Allotment
   if (refundAmount > 0) {
     await saveTransaction({
       application_id: app.id,
@@ -494,7 +521,6 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
     });
   }
 
-  // If profit earned, auto-generate profit payout transaction
   if (profitLoss > 0) {
     await saveTransaction({
       application_id: app.id,
@@ -509,20 +535,16 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
   }
 };
 
-// CALCULATE MONEY FLOW LEDGER FOR EACH PARTY
+// CALCULATE PARTY BALANCES
 export const calculatePartyBalances = (parties, transactions) => {
   return parties.map(party => {
-    let moneyReceived = 0; // Money coming IN to party
-    let moneySent = 0;     // Money going OUT from party
+    let moneyReceived = 0;
+    let moneySent = 0;
 
     transactions.forEach(tx => {
       const amt = parseFloat(tx.amount || 0);
-      if (tx.to_party_id === party.id) {
-        moneyReceived += amt;
-      }
-      if (tx.from_party_id === party.id) {
-        moneySent += amt;
-      }
+      if (tx.to_party_id === party.id) moneyReceived += amt;
+      if (tx.from_party_id === party.id) moneySent += amt;
     });
 
     const netCashFlow = moneyReceived - moneySent;
