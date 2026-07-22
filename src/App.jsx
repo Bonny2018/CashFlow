@@ -102,45 +102,14 @@ export default function App() {
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = Boolean(user && (userEmail.includes('mohitjain12104@gmail') || userEmail === 'admin'));
+  const isAdmin = true; // All members have full collaborative access to view and manage entries
 
-  // Filtering for Regular Users vs Admin
-  const scopedParties = React.useMemo(() => {
-    if (isAdmin) return parties;
-    if (!user) return [];
-    return parties.filter(p => !p.user_email || p.user_email.trim().toLowerCase() === userEmail);
-  }, [parties, userEmail, isAdmin, user]);
-
-  const scopedPartyIds = React.useMemo(() => scopedParties.map(p => p.id), [scopedParties]);
-
-  const scopedApplications = React.useMemo(() => {
-    if (isAdmin) return applications;
-    if (!user) return [];
-    return applications.filter(a => !a.user_email || (a.user_email && a.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(a.party_id));
-  }, [applications, scopedPartyIds, userEmail, isAdmin, user]);
-
-  const scopedTransactions = React.useMemo(() => {
-    if (isAdmin) return transactions;
-    if (!user) return [];
-    return transactions.filter(t => 
-      !t.user_email ||
-      (t.user_email && t.user_email.trim().toLowerCase() === userEmail) || 
-      scopedPartyIds.includes(t.from_party_id) || 
-      scopedPartyIds.includes(t.to_party_id)
-    );
-  }, [transactions, scopedPartyIds, userEmail, isAdmin, user]);
-
-  const scopedTaxRecords = React.useMemo(() => {
-    if (isAdmin) return taxRecords;
-    if (!user) return [];
-    return taxRecords.filter(r => !r.user_email || (r.user_email && r.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(r.party_id));
-  }, [taxRecords, scopedPartyIds, userEmail, isAdmin, user]);
-
-  const scopedTaxPayments = React.useMemo(() => {
-    if (isAdmin) return taxPayments;
-    if (!user) return [];
-    return taxPayments.filter(p => !p.user_email || (p.user_email && p.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(p.party_id));
-  }, [taxPayments, scopedPartyIds, userEmail, isAdmin, user]);
+  // Real-World Shared Ledger: ALL Members & Visitors see ALL entries when visiting the site
+  const scopedParties = React.useMemo(() => parties, [parties]);
+  const scopedApplications = React.useMemo(() => applications, [applications]);
+  const scopedTransactions = React.useMemo(() => transactions, [transactions]);
+  const scopedTaxRecords = React.useMemo(() => taxRecords, [taxRecords]);
+  const scopedTaxPayments = React.useMemo(() => taxPayments, [taxPayments]);
 
   const partiesWithBalances = calculatePartyBalances(scopedParties, scopedTransactions);
 
@@ -151,10 +120,6 @@ export default function App() {
   };
 
   const handleDeleteParty = async (id) => {
-    if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete party accounts.');
-      return;
-    }
     await deleteParty(id);
     await loadData();
   };
@@ -171,10 +136,6 @@ export default function App() {
   };
 
   const handleDeleteApplication = async (id) => {
-    if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete applications.');
-      return;
-    }
     await deleteApplication(id);
     await loadData();
   };
@@ -185,10 +146,6 @@ export default function App() {
   };
 
   const handleDeleteTransaction = async (id) => {
-    if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete transactions.');
-      return;
-    }
     await deleteTransaction(id);
     await loadData();
   };
@@ -214,19 +171,11 @@ export default function App() {
   };
 
   const handleUpdateStatus = async (appId, status, allottedLots, profit) => {
-    if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to update allotment results.');
-      return;
-    }
     await updateAllotmentStatus(appId, status, allottedLots, profit);
     await loadData();
   };
 
   const handleResetAllData = async () => {
-    if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to wipe system data.');
-      return;
-    }
     await clearAllStoreData();
     await loadData();
   };
