@@ -72,11 +72,23 @@ export default function App() {
     // Check Auth session
     if (isSupabaseConfigured && supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user ?? null);
+        if (session?.user) {
+          setUser(session.user);
+        } else {
+          const local = localStorage.getItem('IPO_USER_SESSION');
+          if (local) setUser(JSON.parse(local));
+          else setUser(null);
+        }
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
+        if (session?.user) {
+          setUser(session.user);
+        } else {
+          const local = localStorage.getItem('IPO_USER_SESSION');
+          if (local) setUser(JSON.parse(local));
+          else setUser(null);
+        }
       });
 
       return () => subscription.unsubscribe();
