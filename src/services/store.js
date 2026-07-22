@@ -110,7 +110,7 @@ export const saveParty = async (partyData) => {
 
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('parties').upsert(newParty).select().single();
-    if (error) { console.error(error); return newParty; }
+    if (error) throw new Error(error.message);
     return data;
   }
 
@@ -124,10 +124,10 @@ export const saveParty = async (partyData) => {
   return newParty;
 };
 
-// DELETE PARTY
 export const deleteParty = async (id) => {
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('parties').delete().eq('id', id);
+    const { error } = await supabase.from('parties').delete().eq('id', id);
+    if (error) throw new Error(error.message);
     return;
   }
   const current = getLocalData('PARTIES', []);
@@ -157,7 +157,7 @@ export const saveIPO = async (ipoData) => {
 
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('ipos').upsert(newIPO).select().single();
-    if (error) { console.error(error); return newIPO; }
+    if (error) throw new Error(error.message);
     return data;
   }
 
@@ -171,10 +171,10 @@ export const saveIPO = async (ipoData) => {
   return newIPO;
 };
 
-// DELETE IPO
 export const deleteIPO = async (id) => {
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('ipos').delete().eq('id', id);
+    const { error } = await supabase.from('ipos').delete().eq('id', id);
+    if (error) throw new Error(error.message);
     return;
   }
   const current = getLocalData('IPOS', []);
@@ -217,7 +217,7 @@ export const saveApplication = async (appData) => {
 
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('ipo_applications').upsert(newApp).select().single();
-    if (error) console.error(error);
+    if (error) throw new Error(error.message);
     else finalApp = data;
   } else {
     if (!newApp.id) newApp.id = `app-${Date.now()}`;
@@ -246,10 +246,10 @@ export const saveApplication = async (appData) => {
   return finalApp;
 };
 
-// DELETE APPLICATION
 export const deleteApplication = async (id) => {
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('ipo_applications').delete().eq('id', id);
+    const { error } = await supabase.from('ipo_applications').delete().eq('id', id);
+    if (error) throw new Error(error.message);
     return;
   }
   const current = getLocalData('APPLICATIONS', []);
@@ -278,7 +278,7 @@ export const saveTransaction = async (txData) => {
 
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('money_transactions').upsert(newTx).select().single();
-    if (error) { console.error(error); return newTx; }
+    if (error) throw new Error(error.message);
     return data;
   }
 
@@ -292,10 +292,10 @@ export const saveTransaction = async (txData) => {
   return newTx;
 };
 
-// DELETE TRANSACTION
 export const deleteTransaction = async (id) => {
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('money_transactions').delete().eq('id', id);
+    const { error } = await supabase.from('money_transactions').delete().eq('id', id);
+    if (error) throw new Error(error.message);
     return;
   }
   const current = getLocalData('TRANSACTIONS', []);
@@ -441,7 +441,7 @@ export const saveTaxRecord = async (taxData) => {
 
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('tax_records').upsert(newRecord).select().single();
-    if (error) { console.error(error); return newRecord; }
+    if (error) throw new Error(error.message);
     return data;
   }
 
@@ -476,7 +476,7 @@ export const saveTaxPayment = async (payData) => {
   let finalPay = newPay;
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('tax_payments').upsert(newPay).select().single();
-    if (error) console.error(error);
+    if (error) throw new Error(error.message);
     else finalPay = data;
   } else {
     if (!newPay.id) newPay.id = `tp-${Date.now()}`;
@@ -505,10 +505,10 @@ export const saveTaxPayment = async (payData) => {
   return finalPay;
 };
 
-// DELETE TAX PAYMENT LOG
 export const deleteTaxPayment = async (id) => {
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('tax_payments').delete().eq('id', id);
+    const { error } = await supabase.from('tax_payments').delete().eq('id', id);
+    if (error) throw new Error(error.message);
     return;
   }
   const current = getLocalData('TAX_PAYMENTS', []);
@@ -516,13 +516,13 @@ export const deleteTaxPayment = async (id) => {
   setLocalData('TAX_PAYMENTS', updated);
 };
 
-// CLEAR / RESET ALL TAX PAYMENTS
 export const clearAllTaxPayments = async (partyId = null, financialYear = null) => {
   if (isSupabaseConfigured && supabase) {
     let query = supabase.from('tax_payments').delete();
     if (partyId) query = query.eq('party_id', partyId);
     if (financialYear && financialYear !== 'ALL') query = query.eq('financial_year', financialYear);
-    await query;
+    const { error } = await query;
+    if (error) throw new Error(error.message);
     return;
   }
 
