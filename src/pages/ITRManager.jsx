@@ -41,6 +41,8 @@ export default function ITRManager({
   const currentFY = getFinancialYear(new Date().toISOString());
   const [selectedFY, setSelectedFY] = useState(currentFY);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'REMAINING_ONLY' | 'SETTLED_ONLY' | 'ALLOTTED_ONLY'
+  const [selectedPartyFilter, setSelectedPartyFilter] = useState('ALL');
 
   // Modals state
   const [paymentModalParty, setPaymentModalParty] = useState(null);
@@ -120,10 +122,15 @@ export default function ITRManager({
       const remainingDue = calculatedTaxDue - amountCollected;
 
       let status = 'SETTLED';
-      if (calculatedTaxDue === 0 && amountCollected === 0) status = 'NO_TAX';
-      else if (remainingDue <= 0 && calculatedTaxDue > 0) status = 'SETTLED';
-      else if (amountCollected > 0 && remainingDue > 0) status = 'PARTIAL';
-      else status = 'PENDING';
+      if (calculatedTaxDue === 0 && amountCollected === 0) {
+        status = 'NO_TAX';
+      } else if (remainingDue <= 0) {
+        status = 'SETTLED';
+      } else if (amountCollected > 0 && remainingDue > 0) {
+        status = 'PARTIAL';
+      } else {
+        status = 'PENDING';
+      }
 
       return {
         party,
@@ -145,16 +152,37 @@ export default function ITRManager({
     });
   }, [parties, applications, selectedFY, taxRecords, taxPayments]);
 
-  // Search Filter
+  // Filtered summary based on search, party dropdown, and status filter
   const filteredSummary = useMemo(() => {
-    if (!searchQuery.trim()) return partyTaxSummary;
-    const q = searchQuery.toLowerCase();
-    return partyTaxSummary.filter(item => 
-      item.party.name.toLowerCase().includes(q) ||
-      (item.party.pan && item.party.pan.toLowerCase().includes(q)) ||
-      (item.party.demat_no && item.party.demat_no.toLowerCase().includes(q))
-    );
-  }, [partyTaxSummary, searchQuery]);
+    return partyTaxSummary.filter(item => {
+      // Party Dropdown filter
+      if (selectedPartyFilter !== 'ALL' && item.party.id !== selectedPartyFilter) {
+        return false;
+      }
+
+      // Status / Collection filter
+      if (statusFilter === 'REMAINING_ONLY' && item.remainingDue <= 0) {
+        return false;
+      }
+      if (statusFilter === 'SETTLED_ONLY' && item.status !== 'SETTLED' && item.status !== 'NO_TAX') {
+        return false;
+      }
+      if (statusFilter === 'ALLOTTED_ONLY' && item.partyApps.length === 0) {
+        return false;
+      }
+
+      // Search Query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = item.party.name.toLowerCase().includes(q);
+        const matchesPan = item.party.pan && item.party.pan.toLowerCase().includes(q);
+        const matchesDemat = item.party.demat_no && item.party.demat_no.toLowerCase().includes(q);
+        if (!matchesName && !matchesPan && !matchesDemat) return false;
+      }
+
+      return true;
+    });
+  }, [partyTaxSummary, searchQuery, statusFilter, selectedPartyFilter]);
 
   // Overall Financial Totals
   const overallMetrics = useMemo(() => {
@@ -163,13 +191,19 @@ export default function ITRManager({
     let totalCollected = 0;
     let totalPending = 0;
     let settledCount = 0;
+    let remainingCount = 0;
+    let allottedCount = 0;
 
     partyTaxSummary.forEach(item => {
       totalGain += item.taxableGain;
       totalTaxDue += item.calculatedTaxDue;
       totalCollected += item.amountCollected;
-      if (item.remainingDue > 0) totalPending += item.remainingDue;
+      if (item.remainingDue > 0) {
+        totalPending += item.remainingDue;
+        remainingCount++;
+      }
       if (item.status === 'SETTLED' || item.status === 'NO_TAX') settledCount++;
+      if (item.partyApps.length > 0) allottedCount++;
     });
 
     return {
@@ -178,6 +212,8 @@ export default function ITRManager({
       totalCollected,
       totalPending,
       settledCount,
+      remainingCount,
+      allottedCount,
       totalParties: partyTaxSummary.length
     };
   }, [partyTaxSummary]);
@@ -309,7 +345,12 @@ export default function ITRManager({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Metric 1: Total Realized Gain */}
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+        <div 
+          onClick={() => setStatusFilter(statusFilter === 'ALLOTTED_ONLY' ? 'ALL' : 'ALLOTTED_ONLY')}
+          className={`bg-slate-900/90 border p-5 rounded-2xl shadow-lg relative overflow-hidden group transition-all cursor-pointer ${
+            statusFilter === 'ALLOTTED_ONLY' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-800 hover:border-emerald-500/30'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-400">Total IPO Profit ({selectedFY})</span>
             <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
@@ -321,13 +362,18 @@ export default function ITRManager({
               {formatINR(overallMetrics.totalGain)}
             </h3>
             <p className="text-[11px] text-emerald-400 mt-1 flex items-center space-x-1">
-              <span>Short Term Capital Gain (STCG)</span>
+              <span>{overallMetrics.allottedCount} Accounts with Allotments</span>
             </p>
           </div>
         </div>
 
         {/* Metric 2: Total Calculated Tax */}
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+        <div 
+          onClick={() => setStatusFilter('ALL')}
+          className={`bg-slate-900/90 border p-5 rounded-2xl shadow-lg relative overflow-hidden group transition-all cursor-pointer ${
+            statusFilter === 'ALL' && selectedPartyFilter === 'ALL' ? 'border-indigo-500/50' : 'border-slate-800 hover:border-indigo-500/30'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-400">Tax / Fee to Collect</span>
             <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
@@ -345,7 +391,12 @@ export default function ITRManager({
         </div>
 
         {/* Metric 3: Total Collected */}
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-teal-500/30 transition-all">
+        <div 
+          onClick={() => setStatusFilter(statusFilter === 'SETTLED_ONLY' ? 'ALL' : 'SETTLED_ONLY')}
+          className={`bg-slate-900/90 border p-5 rounded-2xl shadow-lg relative overflow-hidden group transition-all cursor-pointer ${
+            statusFilter === 'SETTLED_ONLY' ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-slate-800 hover:border-teal-500/30'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-400">Amount Collected So Far</span>
             <div className="p-2 bg-teal-500/10 text-teal-400 rounded-xl">
@@ -353,7 +404,7 @@ export default function ITRManager({
             </div>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold font-display text-emerald-400 tracking-tight">
+            <h3 className="text-2xl font-bold font-display text-teal-400 tracking-tight">
               {formatINR(overallMetrics.totalCollected)}
             </h3>
             <p className="text-[11px] text-slate-400 mt-1">
@@ -363,9 +414,14 @@ export default function ITRManager({
         </div>
 
         {/* Metric 4: Balance Due to Collect */}
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all">
+        <div 
+          onClick={() => setStatusFilter(statusFilter === 'REMAINING_ONLY' ? 'ALL' : 'REMAINING_ONLY')}
+          className={`bg-slate-900/90 border p-5 rounded-2xl shadow-lg relative overflow-hidden group transition-all cursor-pointer ${
+            statusFilter === 'REMAINING_ONLY' ? 'border-amber-500 ring-2 ring-amber-500/30 bg-amber-500/5' : 'border-slate-800 hover:border-amber-500/40'
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Remaining Tax Due</span>
+            <span className="text-xs font-medium text-amber-300">Remaining Tax Due</span>
             <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">
               <Clock3 className="w-4 h-4" />
             </div>
@@ -374,8 +430,8 @@ export default function ITRManager({
             <h3 className="text-2xl font-bold font-display text-amber-400 tracking-tight">
               {formatINR(overallMetrics.totalPending)}
             </h3>
-            <p className="text-[11px] text-amber-400/80 mt-1">
-              Pending collection from clients
+            <p className="text-[11px] text-amber-400/90 font-medium mt-1">
+              {overallMetrics.remainingCount} {overallMetrics.remainingCount === 1 ? 'Person' : 'Persons'} Pending Collection (Click to filter)
             </p>
           </div>
         </div>
@@ -386,28 +442,119 @@ export default function ITRManager({
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
         
         {/* Controls Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search person, PAN, or Demat..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 w-64 sm:w-80 transition-all"
-              />
+        <div className="p-4 sm:p-6 border-b border-slate-800/80 space-y-4">
+          
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Search & Party Dropdown */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search person, PAN, or Demat..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 w-56 sm:w-64 transition-all"
+                />
+              </div>
+
+              {/* Party Select Dropdown */}
+              <select
+                value={selectedPartyFilter}
+                onChange={(e) => setSelectedPartyFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-medium max-w-[200px]"
+              >
+                <option value="ALL">All Parties / Persons ({parties.length})</option>
+                {parties.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.pan ? `(${p.pan})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Quick Filter Status Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  statusFilter === 'ALL'
+                    ? 'bg-slate-800 text-white border border-slate-700 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-950/60'
+                }`}
+              >
+                All ({partyTaxSummary.length})
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('REMAINING_ONLY')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+                  statusFilter === 'REMAINING_ONLY'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-amber-300 hover:bg-slate-950/60'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>Collection Remaining ({overallMetrics.remainingCount})</span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('SETTLED_ONLY')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  statusFilter === 'SETTLED_ONLY'
+                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-teal-300 hover:bg-slate-950/60'
+                }`}
+              >
+                Settled ({overallMetrics.settledCount})
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('ALLOTTED_ONLY')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  statusFilter === 'ALLOTTED_ONLY'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-emerald-300 hover:bg-slate-950/60'
+                }`}
+              >
+                With Allotment ({overallMetrics.allottedCount})
+              </button>
+            </div>
+
           </div>
 
-          <div className="flex items-center space-x-2 text-xs text-slate-400">
-            <span className="px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800 font-medium">
-              Active FY: <strong className="text-emerald-400">{selectedFY}</strong>
-            </span>
-            <span className="px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800 font-medium">
-              Records: <strong className="text-white">{filteredSummary.length}</strong>
-            </span>
-          </div>
+          {(statusFilter !== 'ALL' || selectedPartyFilter !== 'ALL' || searchQuery) && (
+            <div className="flex items-center space-x-2 text-xs text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+              <span className="font-semibold text-emerald-400">Active Filters:</span>
+              {statusFilter !== 'ALL' && (
+                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded">
+                  {statusFilter === 'REMAINING_ONLY' ? 'Collection Remaining Only' : statusFilter === 'SETTLED_ONLY' ? 'Settled Only' : 'Allotted Only'}
+                </span>
+              )}
+              {selectedPartyFilter !== 'ALL' && (
+                <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 rounded">
+                  Party: {parties.find(p => p.id === selectedPartyFilter)?.name || 'Selected'}
+                </span>
+              )}
+              {searchQuery && (
+                <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded">
+                  Search: "{searchQuery}"
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setSelectedPartyFilter('ALL');
+                  setSearchQuery('');
+                }}
+                className="text-xs text-red-400 hover:underline ml-auto font-medium"
+              >
+                Reset Filters
+              </button>
+            </div>
+          )}
+
         </div>
 
         {/* Table Content */}
