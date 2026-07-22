@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, Sparkles, AlertCircle, ShieldCheck, UserCheck } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   if (!isOpen) return null;
 
-  const handleLogin = (loginEmail, loginPassword) => {
+  const handleLogin = async (loginEmail, loginPassword) => {
     setErrorMsg('');
     if (!loginEmail || !loginPassword) {
       setErrorMsg('Please enter both email and password');
@@ -19,15 +20,43 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      const cleanEmail = loginEmail.trim().toLowerCase();
-      const localUser = { email: cleanEmail, id: `user-${Date.now()}` };
-      localStorage.setItem('IPO_USER_SESSION', JSON.stringify(localUser));
-      localStorage.setItem('IPO_DEMO_USER', JSON.stringify(localUser));
-      onAuthSuccess(localUser);
+    if (isSupabaseConfigured && supabase) {
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email: loginEmail,
+          password: loginPassword,
+        });
+        if (error) {
+          setErrorMsg(error.message);
+          setLoading(false);
+          return;
+        }
+        onAuthSuccess(data.user);
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password: loginPassword,
+        });
+        if (error) {
+          setErrorMsg(error.message);
+          setLoading(false);
+          return;
+        }
+        onAuthSuccess(data.user);
+      }
       setLoading(false);
       onClose();
-    }, 300);
+    } else {
+      setTimeout(() => {
+        const cleanEmail = loginEmail.trim().toLowerCase();
+        const localUser = { email: cleanEmail, id: `user-${Date.now()}` };
+        localStorage.setItem('IPO_USER_SESSION', JSON.stringify(localUser));
+        localStorage.setItem('IPO_DEMO_USER', JSON.stringify(localUser));
+        onAuthSuccess(localUser);
+        setLoading(false);
+        onClose();
+      }, 300);
+    }
   };
 
   const handleSubmit = (e) => {
