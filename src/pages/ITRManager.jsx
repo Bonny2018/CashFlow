@@ -420,7 +420,7 @@ export default function ITRManager({
               Amount Collected So Far
             </span>
             <div className="flex items-center space-x-2">
-              {overallMetrics.totalCollected > 0 && onClearTaxPayments && (
+              {overallMetrics.totalCollected > 0 && onClearTaxPayments && isAdmin && (
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
@@ -681,11 +681,12 @@ export default function ITRManager({
                     <td className="py-3.5 px-4 text-center">
                       <button
                         onClick={() => openConfigModal(item)}
+                        disabled={!isAdmin}
                         className="px-2.5 py-1 bg-slate-950 hover:bg-slate-800 text-indigo-300 border border-slate-800 hover:border-indigo-500/40 rounded-lg text-xs font-semibold transition-all inline-flex items-center space-x-1"
-                        title="Click to edit tax rate or fees"
+                        title={isAdmin ? "Click to edit tax rate or fees" : "Tax Rate"}
                       >
                         <span>{item.taxRate}%</span>
-                        <Edit3 className="w-3 h-3 text-slate-400" />
+                        {isAdmin && <Edit3 className="w-3 h-3 text-slate-400" />}
                       </button>
                     </td>
 
@@ -738,14 +739,16 @@ export default function ITRManager({
                     {/* Action Buttons */}
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center space-x-1">
-                        <button
-                          onClick={() => openPaymentModal(item)}
-                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium text-xs shadow-sm transition-all flex items-center space-x-1"
-                          title="Record Tax Collection"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Collect</span>
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => openPaymentModal(item)}
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium text-xs shadow-sm transition-all flex items-center space-x-1"
+                            title="Record Tax Collection"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Collect</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => openStatementModal(item)}
@@ -755,13 +758,15 @@ export default function ITRManager({
                           <Receipt className="w-4 h-4" />
                         </button>
 
-                        <button
-                          onClick={() => openConfigModal(item)}
-                          className="p-1.5 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-800 transition-all"
-                          title="Tax Settings & Notes"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => openConfigModal(item)}
+                            className="p-1.5 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-800 transition-all"
+                            title="Tax Settings & Notes"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
 
@@ -1125,7 +1130,7 @@ export default function ITRManager({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-xs text-slate-300 uppercase tracking-wider">Tax Payment Collection History</h4>
-                {statementModalParty.amountCollected > 0 && onClearTaxPayments && (
+                {statementModalParty.amountCollected > 0 && onClearTaxPayments && isAdmin && (
                   <button
                     onClick={async () => {
                       if (window.confirm(`Clear all tax collections for ${statementModalParty.party.name} and reset to ₹0?`)) {
@@ -1175,18 +1180,20 @@ export default function ITRManager({
                             {formatINR(pay.amount)}
                           </td>
                           <td className="py-2.5 px-3 text-center">
-                            <button
-                              onClick={async () => {
-                                if (window.confirm('Delete this tax payment log and update collected balance?')) {
-                                  await onDeleteTaxPayment(pay.id);
-                                  setStatementModalParty(null);
-                                }
-                              }}
-                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all"
-                              title="Delete Payment Entry (Make ₹0)"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('Delete this tax payment log and update collected balance?')) {
+                                    await onDeleteTaxPayment(pay.id);
+                                    setStatementModalParty(null);
+                                  }
+                                }}
+                                className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all"
+                                title="Delete Payment Entry (Make ₹0)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))

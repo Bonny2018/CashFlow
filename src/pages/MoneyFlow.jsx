@@ -151,6 +151,7 @@ export default function MoneyFlow({
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
+                      ) : (
                         <span className="text-[10px] text-slate-500 font-mono" title="Only Admin (admin@gmail.com) can delete">
                           Locked
                         </span>

@@ -31,7 +31,7 @@ export default function ExcelGrid({
 
   const handleDeleteApp = async (appId) => {
     if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete applications.');
+      alert('Access Denied: Only Admin (admin@gmail.com) has permission to delete applications.');
       return;
     }
     if (window.confirm('Are you sure you want to delete this row?')) {
@@ -265,7 +265,7 @@ export default function ExcelGrid({
                             </button>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-slate-500 font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800" title="Only Admin (mohitjain12104@gmail.com) can update or delete">
+                          <span className="text-[10px] text-slate-500 font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800" title="Only Admin (admin@gmail.com) can update or delete">
                             Locked
                           </span>
                         )}
