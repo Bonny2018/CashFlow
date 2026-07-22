@@ -161,14 +161,17 @@ export default function ITRManager({
       }
 
       // Status / Collection filter
-      if (statusFilter === 'REMAINING_ONLY' && item.remainingDue <= 0) {
-        return false;
-      }
-      if (statusFilter === 'SETTLED_ONLY' && item.status !== 'SETTLED' && item.status !== 'NO_TAX') {
-        return false;
-      }
-      if (statusFilter === 'ALLOTTED_ONLY' && item.partyApps.length === 0) {
-        return false;
+      if (statusFilter === 'PENDING' || statusFilter === 'REMAINING_ONLY') {
+        // Show ONLY accounts where tax collection is pending or remaining (> 0)
+        if (item.remainingDue <= 0 && item.status !== 'PENDING' && item.status !== 'PARTIAL') {
+          return false;
+        }
+      } else if (statusFilter === 'SETTLED_ONLY') {
+        if (item.status !== 'SETTLED') return false;
+      } else if (statusFilter === 'NO_TAX') {
+        if (item.status !== 'NO_TAX') return false;
+      } else if (statusFilter === 'ALLOTTED_ONLY') {
+        if (item.partyApps.length === 0) return false;
       }
 
       // Search Query filter
@@ -307,36 +310,51 @@ export default function ITRManager({
           </div>
         </div>
 
-        {/* Financial Year Selector */}
-        <div className="flex items-center space-x-3 relative z-10 self-start md:self-auto bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
-          <div className="flex items-center space-x-2 px-3 py-1.5 text-xs text-slate-400 font-medium">
-            <Calendar className="w-4 h-4 text-emerald-400" />
-            <span>Select FY:</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            {availableFYs.map(fy => (
+        {/* Financial Year Selector & Quick Pending Toggle */}
+        <div className="flex flex-wrap items-center gap-3 relative z-10 self-start md:self-auto">
+          
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 border shadow-lg ${
+              statusFilter === 'PENDING' || statusFilter === 'REMAINING_ONLY'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/20'
+                : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span>⚡ SHOW PENDING ({overallMetrics.remainingCount})</span>
+          </button>
+
+          <div className="flex items-center space-x-3 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+            <div className="flex items-center space-x-2 px-3 py-1.5 text-xs text-slate-400 font-medium">
+              <Calendar className="w-4 h-4 text-emerald-400" />
+              <span>Select FY:</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              {availableFYs.map(fy => (
+                <button
+                  key={fy}
+                  onClick={() => setSelectedFY(fy)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedFY === fy
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  }`}
+                >
+                  {fy}
+                </button>
+              ))}
               <button
-                key={fy}
-                onClick={() => setSelectedFY(fy)}
+                onClick={() => setSelectedFY('ALL')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  selectedFY === fy
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20'
+                  selectedFY === 'ALL'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
-                {fy}
+                All FYs
               </button>
-            ))}
-            <button
-              onClick={() => setSelectedFY('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                selectedFY === 'ALL'
-                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-            >
-              All FYs
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -477,6 +495,18 @@ export default function ITRManager({
             {/* Quick Filter Status Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
               <button
+                onClick={() => setStatusFilter('PENDING')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                  statusFilter === 'PENDING' || statusFilter === 'REMAINING_ONLY'
+                    ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-md ring-1 ring-amber-500/30'
+                    : 'bg-amber-500/10 text-amber-400/80 hover:bg-amber-500/20 border border-amber-500/20'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>SHOW PENDING ({overallMetrics.remainingCount})</span>
+              </button>
+
+              <button
                 onClick={() => setStatusFilter('ALL')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   statusFilter === 'ALL'
@@ -488,18 +518,6 @@ export default function ITRManager({
               </button>
 
               <button
-                onClick={() => setStatusFilter('REMAINING_ONLY')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-                  statusFilter === 'REMAINING_ONLY'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-amber-300 hover:bg-slate-950/60'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span>Collection Remaining ({overallMetrics.remainingCount})</span>
-              </button>
-
-              <button
                 onClick={() => setStatusFilter('SETTLED_ONLY')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   statusFilter === 'SETTLED_ONLY'
@@ -508,6 +526,17 @@ export default function ITRManager({
                 }`}
               >
                 Settled ({overallMetrics.settledCount})
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('NO_TAX')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  statusFilter === 'NO_TAX'
+                    ? 'bg-slate-700 text-slate-200 border border-slate-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-300 hover:bg-slate-950/60'
+                }`}
+              >
+                No Tax ({partyTaxSummary.filter(i => i.status === 'NO_TAX').length})
               </button>
 
               <button
