@@ -18,6 +18,7 @@ const SQL_SCHEMA = `-- Execute this in Supabase SQL Editor:
 CREATE TABLE IF NOT EXISTS public.parties (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email VARCHAR(255),
     name VARCHAR(255) NOT NULL,
     pan VARCHAR(20),
     demat_no VARCHAR(50),
@@ -28,9 +29,11 @@ CREATE TABLE IF NOT EXISTS public.parties (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 CREATE TABLE IF NOT EXISTS public.ipos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email VARCHAR(255),
     company_name VARCHAR(255) NOT NULL,
     symbol VARCHAR(50),
     price_per_share NUMERIC(10,2) NOT NULL,
@@ -43,9 +46,11 @@ CREATE TABLE IF NOT EXISTS public.ipos (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 CREATE TABLE IF NOT EXISTS public.ipo_applications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email VARCHAR(255),
     ipo_id UUID REFERENCES public.ipos(id) ON DELETE CASCADE,
     party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
     application_no VARCHAR(50),
@@ -64,9 +69,11 @@ CREATE TABLE IF NOT EXISTS public.ipo_applications (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 CREATE TABLE IF NOT EXISTS public.money_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email VARCHAR(255),
     application_id UUID REFERENCES public.ipo_applications(id) ON DELETE SET NULL,
     from_party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
     to_party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
@@ -78,9 +85,11 @@ CREATE TABLE IF NOT EXISTS public.money_transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 CREATE TABLE IF NOT EXISTS public.tax_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email VARCHAR(255),
     party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
     financial_year VARCHAR(20) NOT NULL,
     tax_rate NUMERIC(5,2) DEFAULT 20.00,
@@ -90,9 +99,11 @@ CREATE TABLE IF NOT EXISTS public.tax_records (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 CREATE TABLE IF NOT EXISTS public.tax_payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email VARCHAR(255),
     party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
     financial_year VARCHAR(20) NOT NULL,
     amount NUMERIC(12,2) NOT NULL,
@@ -102,6 +113,7 @@ CREATE TABLE IF NOT EXISTS public.tax_payments (
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- RLS POLICIES
 ALTER TABLE public.parties ENABLE ROW LEVEL SECURITY;
