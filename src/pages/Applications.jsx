@@ -54,7 +54,7 @@ export default function Applications({
 
   const handleDeleteApp = async (app) => {
     if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete applications.');
+      alert('Access Denied: Only Admin (admin@gmail.com) has permission to delete applications.');
       return;
     }
     if (window.confirm('Are you sure you want to delete this IPO application?')) {
@@ -163,13 +163,15 @@ export default function Applications({
           <p className="text-xs text-slate-400 mt-0.5">Manage family bids, allotment statuses, and money unblocks</p>
         </div>
 
-        <button
-          onClick={() => setIsAppModalOpen(true)}
-          className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Record New Application</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setIsAppModalOpen(true)}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Record New Application</span>
+          </button>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -285,7 +287,7 @@ export default function Applications({
                       </button>
                     </>
                   ) : (
-                    <span className="text-[10px] text-slate-500 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800" title="Only Admin (mohitjain12104@gmail.com) can update or delete">
+                    <span className="text-[10px] text-slate-500 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800" title="Only Admin (admin@gmail.com) can update or delete">
                       Locked
                     </span>
                   )}
