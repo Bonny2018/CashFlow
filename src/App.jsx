@@ -30,6 +30,7 @@ import {
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 import GraphicalAnalytics from './pages/GraphicalAnalytics';
+import SupabaseSetup from './pages/SupabaseSetup';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -296,6 +297,10 @@ export default function App() {
                 onDeleteTaxPayment={handleDeleteTaxPayment}
                 onClearTaxPayments={handleClearTaxPayments}
               />
+            )}
+
+            {activeTab === 'supabase' && (
+              <SupabaseSetup />
             )}
           </>
         )}

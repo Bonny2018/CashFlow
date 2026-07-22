@@ -33,7 +33,8 @@ export default function Navbar({
     { id: 'applications', label: 'IPO Applications', icon: Table },
     { id: 'ledger', label: 'Party Accounts', icon: Users },
     { id: 'money-flow', label: 'Money Come/Go', icon: ArrowRightLeft },
-    { id: 'itr-tax', label: 'ITR & Tax', icon: FileText, badge: 'ITR' }
+    { id: 'itr-tax', label: 'ITR & Tax', icon: FileText, badge: 'ITR' },
+    { id: 'supabase', label: 'Database Setup', icon: Database, badge: 'ADMIN' }
   ];
 
   const userEmail = (user?.email || '').trim().toLowerCase();
