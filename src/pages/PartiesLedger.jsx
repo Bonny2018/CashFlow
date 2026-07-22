@@ -40,7 +40,7 @@ export default function PartiesLedger({
 
   const openAddParty = () => {
     if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitsjain12104@gmail.com) has permission to add party accounts.');
+      alert('Access Denied: Only Admin (admin@gmail.com) has permission to add party accounts.');
       return;
     }
     setEditingParty(null);
@@ -50,7 +50,7 @@ export default function PartiesLedger({
 
   const openEditParty = (party) => {
     if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to edit party accounts.');
+      alert('Access Denied: Only Admin (admin@gmail.com) has permission to edit party accounts.');
       return;
     }
     setEditingParty(party);
@@ -66,7 +66,7 @@ export default function PartiesLedger({
 
   const handleDelete = async (party) => {
     if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete party members.');
+      alert('Access Denied: Only Admin (admin@gmail.com) has permission to delete party members.');
       return;
     }
     if (window.confirm(`Are you sure you want to delete ${party.name}?`)) {
@@ -109,13 +109,15 @@ export default function PartiesLedger({
           <p className="text-xs text-slate-400 mt-0.5">Manage family members, demat profiles, and individual money statements</p>
         </div>
 
-        <button
-          onClick={openAddParty}
-          className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Party Member</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={openAddParty}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Party Member</span>
+          </button>
+        )}
       </div>
 
       {/* Party Cards Grid */}
@@ -168,8 +170,7 @@ export default function PartiesLedger({
                     </>
                   ) : (
                     <span 
-                      className="text-[10px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800"
-                      title="Only Admin (mohitjain12104@gmail.com) can edit or delete"
+                      title="Only Admin (admin@gmail.com) can edit or delete"
                     >
                       View Only
                     </span>

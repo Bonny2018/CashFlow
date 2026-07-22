@@ -42,7 +42,7 @@ export default function MoneyFlow({
 
   const handleDeleteTx = async (tx) => {
     if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete transactions.');
+      alert('Access Denied: Only Admin (admin@gmail.com) has permission to delete transactions.');
       return;
     }
     if (window.confirm('Are you sure you want to delete this money transfer transaction?')) {
@@ -78,13 +78,15 @@ export default function MoneyFlow({
           <p className="text-xs text-slate-400 mt-0.5">Track inter-party cash transfers, refunds received, and member settlements</p>
         </div>
 
-        <button
-          onClick={() => setIsTransferModalOpen(true)}
-          className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Log Money Transfer</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setIsTransferModalOpen(true)}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Log Money Transfer</span>
+          </button>
+        )}
       </div>
 
       {/* Transaction Log Table */}
@@ -149,8 +151,7 @@ export default function MoneyFlow({
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      ) : (
-                        <span className="text-[10px] text-slate-500 font-mono" title="Only Admin (mohitjain12104@gmail.com) can delete">
+                        <span className="text-[10px] text-slate-500 font-mono" title="Only Admin (admin@gmail.com) can delete">
                           Locked
                         </span>
                       )}
