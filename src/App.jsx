@@ -6,7 +6,6 @@ import ExcelGrid from './pages/ExcelGrid';
 import Applications from './pages/Applications';
 import PartiesLedger from './pages/PartiesLedger';
 import MoneyFlow from './pages/MoneyFlow';
-import SQLiteManager from './pages/SQLiteManager';
 import ITRManager from './pages/ITRManager';
 
 import { 
@@ -297,10 +296,6 @@ export default function App() {
                 onDeleteTaxPayment={handleDeleteTaxPayment}
                 onClearTaxPayments={handleClearTaxPayments}
               />
-            )}
-
-            {activeTab === 'sqlite' && (
-              <SQLiteManager />
             )}
           </>
         )}
