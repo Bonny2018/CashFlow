@@ -83,6 +83,31 @@ db.exec(`
     notes TEXT,
     created_at TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS tax_records (
+    id TEXT PRIMARY KEY,
+    user_email TEXT,
+    party_id TEXT NOT NULL,
+    financial_year TEXT NOT NULL,
+    tax_rate REAL DEFAULT 20,
+    fee_per_allotment REAL DEFAULT 0,
+    gain_override REAL,
+    notes TEXT,
+    created_at TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS tax_payments (
+    id TEXT PRIMARY KEY,
+    user_email TEXT,
+    party_id TEXT NOT NULL,
+    financial_year TEXT NOT NULL,
+    amount REAL NOT NULL,
+    payment_mode TEXT DEFAULT 'UPI',
+    payment_date TEXT,
+    reference_no TEXT,
+    notes TEXT,
+    created_at TEXT
+  );
 `);
 
 // Graceful column migrations for existing databases
@@ -90,6 +115,8 @@ try { db.exec("ALTER TABLE parties ADD COLUMN user_email TEXT;"); } catch (e) {}
 try { db.exec("ALTER TABLE ipos ADD COLUMN user_email TEXT;"); } catch (e) {}
 try { db.exec("ALTER TABLE ipo_applications ADD COLUMN user_email TEXT;"); } catch (e) {}
 try { db.exec("ALTER TABLE money_transactions ADD COLUMN user_email TEXT;"); } catch (e) {}
+try { db.exec("ALTER TABLE tax_records ADD COLUMN user_email TEXT;"); } catch (e) {}
+try { db.exec("ALTER TABLE tax_payments ADD COLUMN user_email TEXT;"); } catch (e) {}
 
 // API ROUTE: FETCH ALL DATA
 app.get('/api/data', (req, res) => {
@@ -98,8 +125,10 @@ app.get('/api/data', (req, res) => {
     const ipos = db.prepare('SELECT * FROM ipos ORDER BY created_at DESC').all();
     const applications = db.prepare('SELECT * FROM ipo_applications ORDER BY application_date DESC').all();
     const transactions = db.prepare('SELECT * FROM money_transactions ORDER BY transaction_date DESC').all();
+    const taxRecords = db.prepare('SELECT * FROM tax_records ORDER BY created_at DESC').all();
+    const taxPayments = db.prepare('SELECT * FROM tax_payments ORDER BY payment_date DESC').all();
 
-    res.json({ parties, ipos, applications, transactions, database: 'SQLite (ipo_ledger.db)' });
+    res.json({ parties, ipos, applications, transactions, taxRecords, taxPayments, database: 'SQLite (ipo_ledger.db)' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -108,6 +137,8 @@ app.get('/api/data', (req, res) => {
 // API ROUTE: WIPE ALL DATA
 app.post('/api/reset', (req, res) => {
   try {
+    db.prepare('DELETE FROM tax_payments').run();
+    db.prepare('DELETE FROM tax_records').run();
     db.prepare('DELETE FROM money_transactions').run();
     db.prepare('DELETE FROM ipo_applications').run();
     db.prepare('DELETE FROM ipos').run();
@@ -248,6 +279,60 @@ app.delete('/api/transactions/:id', (req, res) => {
   try {
     const { id } = req.params;
     db.prepare('DELETE FROM money_transactions WHERE id = ?').run(id);
+    res.json({ success: true, id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API ROUTE: UPSERT TAX RECORD
+app.post('/api/tax-records', (req, res) => {
+  try {
+    const tr = req.body;
+    const stmt = db.prepare(`
+      INSERT INTO tax_records (id, user_email, party_id, financial_year, tax_rate, fee_per_allotment, gain_override, notes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        user_email=excluded.user_email,
+        tax_rate=excluded.tax_rate,
+        fee_per_allotment=excluded.fee_per_allotment,
+        gain_override=excluded.gain_override,
+        notes=excluded.notes
+    `);
+    stmt.run(tr.id, tr.user_email || null, tr.party_id, tr.financial_year, tr.tax_rate ?? 20, tr.fee_per_allotment ?? 0, tr.gain_override ?? null, tr.notes || '', tr.created_at || new Date().toISOString());
+    res.json({ success: true, taxRecord: tr });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API ROUTE: UPSERT TAX PAYMENT
+app.post('/api/tax-payments', (req, res) => {
+  try {
+    const tp = req.body;
+    const stmt = db.prepare(`
+      INSERT INTO tax_payments (id, user_email, party_id, financial_year, amount, payment_mode, payment_date, reference_no, notes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        user_email=excluded.user_email,
+        amount=excluded.amount,
+        payment_mode=excluded.payment_mode,
+        payment_date=excluded.payment_date,
+        reference_no=excluded.reference_no,
+        notes=excluded.notes
+    `);
+    stmt.run(tp.id, tp.user_email || null, tp.party_id, tp.financial_year, tp.amount, tp.payment_mode || 'UPI', tp.payment_date || new Date().toISOString(), tp.reference_no || '', tp.notes || '', tp.created_at || new Date().toISOString());
+    res.json({ success: true, taxPayment: tp });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API ROUTE: DELETE TAX PAYMENT
+app.delete('/api/tax-payments/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare('DELETE FROM tax_payments WHERE id = ?').run(id);
     res.json({ success: true, id });
   } catch (err) {
     res.status(500).json({ error: err.message });

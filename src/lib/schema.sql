@@ -73,11 +73,40 @@ CREATE TABLE IF NOT EXISTS public.money_transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 5. TAX RECORDS & CONFIGURATIONS TABLE
+CREATE TABLE IF NOT EXISTS public.tax_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
+    financial_year VARCHAR(20) NOT NULL,
+    tax_rate NUMERIC(5,2) DEFAULT 20.00,
+    fee_per_allotment NUMERIC(10,2) DEFAULT 0.00,
+    gain_override NUMERIC(12,2),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. TAX PAYMENTS LOG TABLE
+CREATE TABLE IF NOT EXISTS public.tax_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
+    financial_year VARCHAR(20) NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    payment_mode VARCHAR(50) DEFAULT 'UPI',
+    payment_date TIMESTAMPTZ DEFAULT NOW(),
+    reference_no VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.parties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ipos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ipo_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.money_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tax_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tax_payments ENABLE ROW LEVEL SECURITY;
 
 -- POLICIES: Users can access their own data or public demo data
 CREATE POLICY "Users can manage their own parties" ON public.parties
@@ -90,4 +119,10 @@ CREATE POLICY "Users can manage their own ipo_applications" ON public.ipo_applic
     FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
 
 CREATE POLICY "Users can manage their own money_transactions" ON public.money_transactions
+    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Users can manage their own tax_records" ON public.tax_records
+    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Users can manage their own tax_payments" ON public.tax_payments
     FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);

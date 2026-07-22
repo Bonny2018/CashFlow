@@ -11,7 +11,8 @@ import {
   UserCheck, 
   ShieldCheck,
   Sparkles,
-  Plus
+  Plus,
+  FileText
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -31,6 +32,7 @@ export default function Navbar({
     { id: 'applications', label: 'IPO Applications', icon: Table },
     { id: 'ledger', label: 'Party Accounts', icon: Users },
     { id: 'money-flow', label: 'Money Come/Go', icon: ArrowRightLeft },
+    { id: 'itr-tax', label: 'ITR & Tax', icon: FileText, badge: 'ITR' },
     { id: 'sqlite', label: 'SQLite DB', icon: Database }
   ];
 

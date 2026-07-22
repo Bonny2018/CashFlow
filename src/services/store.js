@@ -34,6 +34,8 @@ export const fetchStoreData = async () => {
           ipos: data.ipos || [],
           applications: data.applications || [],
           transactions: data.transactions || [],
+          taxRecords: data.taxRecords || [],
+          taxPayments: data.taxPayments || [],
           dbType: 'SQLite (ipo_ledger.db)'
         };
       }
@@ -45,8 +47,10 @@ export const fetchStoreData = async () => {
   const ipos = getLocalData('IPOS', []);
   const applications = getLocalData('APPLICATIONS', []);
   const transactions = getLocalData('TRANSACTIONS', []);
+  const taxRecords = getLocalData('TAX_RECORDS', []);
+  const taxPayments = getLocalData('TAX_PAYMENTS', []);
 
-  return { parties, ipos, applications, transactions, dbType: 'Local Demo Storage' };
+  return { parties, ipos, applications, transactions, taxRecords, taxPayments, dbType: 'Local Demo Storage' };
 };
 
 // CLEAR ALL DATA
@@ -59,6 +63,8 @@ export const clearAllStoreData = async () => {
   localStorage.removeItem('IPO_STORE_IPOS');
   localStorage.removeItem('IPO_STORE_APPLICATIONS');
   localStorage.removeItem('IPO_STORE_TRANSACTIONS');
+  localStorage.removeItem('IPO_STORE_TAX_RECORDS');
+  localStorage.removeItem('IPO_STORE_TAX_PAYMENTS');
 };
 
 // SAVE PARTY
@@ -355,4 +361,107 @@ export const calculatePartyBalances = (parties, transactions) => {
       currentBalance
     };
   });
+};
+
+// GET INDIAN FINANCIAL YEAR FROM DATE STRING
+export const getFinancialYear = (dateStr) => {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  if (isNaN(d.getTime())) return 'FY 2026-27';
+  const year = d.getFullYear();
+  const month = d.getMonth(); // 0-indexed: 3 = April
+  if (month >= 3) {
+    const nextYr = (year + 1).toString().slice(2);
+    return `FY ${year}-${nextYr}`;
+  } else {
+    const currYrStr = year.toString().slice(2);
+    return `FY ${year - 1}-${currYrStr}`;
+  }
+};
+
+// SAVE TAX CONFIG RECORD (Per party per FY)
+export const saveTaxRecord = async (taxData) => {
+  const newRecord = {
+    id: taxData.id || `tr-${Date.now()}`,
+    user_email: taxData.user_email || null,
+    party_id: taxData.party_id,
+    financial_year: taxData.financial_year,
+    tax_rate: parseFloat(taxData.tax_rate ?? 20),
+    fee_per_allotment: parseFloat(taxData.fee_per_allotment ?? 0),
+    gain_override: taxData.gain_override !== undefined && taxData.gain_override !== null && taxData.gain_override !== '' ? parseFloat(taxData.gain_override) : null,
+    notes: taxData.notes || '',
+    created_at: taxData.created_at || new Date().toISOString()
+  };
+
+  try {
+    await fetch(`${getApiUrl()}/tax-records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRecord)
+    });
+  } catch (e) {}
+
+  const current = getLocalData('TAX_RECORDS', []);
+  const index = current.findIndex(r => r.id === newRecord.id);
+  if (index >= 0) current[index] = newRecord;
+  else current.unshift(newRecord);
+  setLocalData('TAX_RECORDS', current);
+
+  return newRecord;
+};
+
+// SAVE TAX PAYMENT LOG
+export const saveTaxPayment = async (payData) => {
+  const newPay = {
+    id: payData.id || `tp-${Date.now()}`,
+    user_email: payData.user_email || null,
+    party_id: payData.party_id,
+    financial_year: payData.financial_year,
+    amount: parseFloat(payData.amount || 0),
+    payment_mode: payData.payment_mode || 'UPI',
+    payment_date: payData.payment_date || new Date().toISOString(),
+    reference_no: payData.reference_no || '',
+    notes: payData.notes || '',
+    created_at: payData.created_at || new Date().toISOString()
+  };
+
+  try {
+    await fetch(`${getApiUrl()}/tax-payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newPay)
+    });
+  } catch (e) {}
+
+  const current = getLocalData('TAX_PAYMENTS', []);
+  const index = current.findIndex(p => p.id === newPay.id);
+  if (index >= 0) current[index] = newPay;
+  else current.unshift(newPay);
+  setLocalData('TAX_PAYMENTS', current);
+
+  // Automatically record money_transaction of type TAX_COLLECTION
+  try {
+    await saveTransaction({
+      user_email: payData.user_email,
+      from_party_id: payData.party_id,
+      to_party_id: 'p-bank',
+      amount: newPay.amount,
+      transaction_type: 'TAX_COLLECTION',
+      payment_mode: newPay.payment_mode,
+      transaction_date: newPay.payment_date,
+      notes: `ITR Tax Collection for ${newPay.financial_year}. Ref: ${newPay.reference_no || 'N/A'}`
+    });
+  } catch (e) {}
+
+  return newPay;
+};
+
+// DELETE TAX PAYMENT LOG
+export const deleteTaxPayment = async (id) => {
+  try {
+    await fetch(`${getApiUrl()}/tax-payments/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  const current = getLocalData('TAX_PAYMENTS', []);
+  const updated = current.filter(p => p.id !== id);
+  setLocalData('TAX_PAYMENTS', updated);
 };

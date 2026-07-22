@@ -7,6 +7,7 @@ import Applications from './pages/Applications';
 import PartiesLedger from './pages/PartiesLedger';
 import MoneyFlow from './pages/MoneyFlow';
 import SQLiteManager from './pages/SQLiteManager';
+import ITRManager from './pages/ITRManager';
 
 import { 
   fetchStoreData, 
@@ -18,6 +19,9 @@ import {
   deleteApplication,
   saveTransaction, 
   deleteTransaction,
+  saveTaxRecord,
+  saveTaxPayment,
+  deleteTaxPayment,
   updateAllotmentStatus, 
   calculatePartyBalances,
   clearAllStoreData
@@ -38,6 +42,8 @@ export default function App() {
   const [ipos, setIpos] = useState([]);
   const [applications, setApplications] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [taxRecords, setTaxRecords] = useState([]);
+  const [taxPayments, setTaxPayments] = useState([]);
   const [isSupabaseLive, setIsSupabaseLive] = useState(false);
 
   // Modals state
@@ -53,6 +59,8 @@ export default function App() {
     setIpos(data.ipos);
     setApplications(data.applications);
     setTransactions(data.transactions);
+    setTaxRecords(data.taxRecords || []);
+    setTaxPayments(data.taxPayments || []);
     setIsSupabaseLive(data.isSupabase);
     setLoading(false);
   };
@@ -121,6 +129,18 @@ export default function App() {
     );
   }, [transactions, scopedPartyIds, userEmail, isAdmin, user]);
 
+  const scopedTaxRecords = React.useMemo(() => {
+    if (isAdmin) return taxRecords;
+    if (!user) return [];
+    return taxRecords.filter(r => !r.user_email || (r.user_email && r.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(r.party_id));
+  }, [taxRecords, scopedPartyIds, userEmail, isAdmin, user]);
+
+  const scopedTaxPayments = React.useMemo(() => {
+    if (isAdmin) return taxPayments;
+    if (!user) return [];
+    return taxPayments.filter(p => !p.user_email || (p.user_email && p.user_email.trim().toLowerCase() === userEmail) || scopedPartyIds.includes(p.party_id));
+  }, [taxPayments, scopedPartyIds, userEmail, isAdmin, user]);
+
   const partiesWithBalances = calculatePartyBalances(scopedParties, scopedTransactions);
 
   // Handlers for store updates
@@ -169,6 +189,25 @@ export default function App() {
       return;
     }
     await deleteTransaction(id);
+    await loadData();
+  };
+
+  const handleSaveTaxRecord = async (taxData) => {
+    await saveTaxRecord({ ...taxData, user_email: taxData.user_email || user?.email });
+    await loadData();
+  };
+
+  const handleSaveTaxPayment = async (payData) => {
+    await saveTaxPayment({ ...payData, user_email: payData.user_email || user?.email });
+    await loadData();
+  };
+
+  const handleDeleteTaxPayment = async (id) => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete tax payment logs.');
+      return;
+    }
+    await deleteTaxPayment(id);
     await loadData();
   };
 
@@ -289,6 +328,21 @@ export default function App() {
                 onDeleteTransaction={handleDeleteTransaction}
                 isTransferModalOpen={isTransferModalOpen}
                 setIsTransferModalOpen={setIsTransferModalOpen}
+              />
+            )}
+
+            {activeTab === 'itr-tax' && (
+              <ITRManager 
+                parties={scopedParties}
+                applications={scopedApplications}
+                ipos={ipos}
+                transactions={scopedTransactions}
+                taxRecords={scopedTaxRecords}
+                taxPayments={scopedTaxPayments}
+                isAdmin={isAdmin}
+                onSaveTaxRecord={handleSaveTaxRecord}
+                onSaveTaxPayment={handleSaveTaxPayment}
+                onDeleteTaxPayment={handleDeleteTaxPayment}
               />
             )}
 
