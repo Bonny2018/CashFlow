@@ -33,8 +33,7 @@ export default function Navbar({
     { id: 'applications', label: 'IPO Applications', icon: Table },
     { id: 'ledger', label: 'Party Accounts', icon: Users },
     { id: 'money-flow', label: 'Money Come/Go', icon: ArrowRightLeft },
-    { id: 'itr-tax', label: 'ITR & Tax', icon: FileText, badge: 'ITR' },
-    { id: 'sqlite', label: 'SQLite DB', icon: Database }
+    { id: 'itr-tax', label: 'ITR & Tax', icon: FileText, badge: 'ITR' }
   ];
 
   const userEmail = (user?.email || '').trim().toLowerCase();
@@ -99,14 +98,7 @@ export default function Navbar({
               <span>Apply IPO</span>
             </button>
 
-            {/* SQLite Status Indicator */}
-            <div 
-              onClick={() => setActiveTab('sqlite')} 
-              className="cursor-pointer flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border bg-slate-900/80 hover:border-slate-700 transition"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-slate-300 hidden sm:inline">SQLite Active</span>
-            </div>
+
 
             {/* User Login/Account */}
             {user ? (

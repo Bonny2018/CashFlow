@@ -1,7 +1,4 @@
-const getApiUrl = () => {
-  const host = typeof window !== 'undefined' && window.location && window.location.hostname ? window.location.hostname : 'localhost';
-  return `http://${host}:3001/api`;
-};
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 // Universal Initial Seed Data for Real-World Shared Visibility across all Visitors & Members
 const DEFAULT_PARTIES = [];
@@ -39,26 +36,40 @@ const setLocalData = (key, val) => {
 
 // EXPORTED STORE DATA FETCHERS & MUTATORS
 export const fetchStoreData = async () => {
-  // 1. Try SQLite Backend first
-  try {
-    const res = await fetch(`${getApiUrl()}/data`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.parties && data.parties.length > 0) {
-        return {
-          parties: data.parties || [],
-          ipos: data.ipos || [],
-          applications: data.applications || [],
-          transactions: data.transactions || [],
-          taxRecords: data.taxRecords || [],
-          taxPayments: data.taxPayments || [],
-          dbType: 'SQLite (ipo_ledger.db)'
-        };
-      }
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const [
+        { data: parties },
+        { data: ipos },
+        { data: applications },
+        { data: transactions },
+        { data: taxRecords },
+        { data: taxPayments }
+      ] = await Promise.all([
+        supabase.from('parties').select('*').order('created_at', { ascending: true }),
+        supabase.from('ipos').select('*').order('created_at', { ascending: false }),
+        supabase.from('ipo_applications').select('*').order('created_at', { ascending: false }),
+        supabase.from('money_transactions').select('*').order('created_at', { ascending: false }),
+        supabase.from('tax_records').select('*').order('created_at', { ascending: false }),
+        supabase.from('tax_payments').select('*').order('created_at', { ascending: false })
+      ]);
+      
+      return { 
+        parties: parties || [], 
+        ipos: ipos || [], 
+        applications: applications || [], 
+        transactions: transactions || [], 
+        taxRecords: taxRecords || [], 
+        taxPayments: taxPayments || [], 
+        isSupabase: true,
+        dbType: 'Supabase Cloud Database' 
+      };
+    } catch (err) {
+      console.error('Supabase fetch error:', err);
     }
-  } catch (e) {}
+  }
 
-  // 2. Fallback to Universal LocalStorage / Universal Default Shared State
+  // 2. Fallback to Universal LocalStorage
   const parties = getLocalData('PARTIES', DEFAULT_PARTIES);
   const ipos = getLocalData('IPOS', DEFAULT_IPOS);
   const applications = getLocalData('APPLICATIONS', DEFAULT_APPLICATIONS);
@@ -66,15 +77,11 @@ export const fetchStoreData = async () => {
   const taxRecords = getLocalData('TAX_RECORDS', DEFAULT_TAX_RECORDS);
   const taxPayments = getLocalData('TAX_PAYMENTS', DEFAULT_TAX_PAYMENTS);
 
-  return { parties, ipos, applications, transactions, taxRecords, taxPayments, dbType: 'Universal Shared Ledger' };
+  return { parties, ipos, applications, transactions, taxRecords, taxPayments, isSupabase: false, dbType: 'Local Storage Demo' };
 };
 
 // CLEAR ALL DATA
 export const clearAllStoreData = async () => {
-  try {
-    await fetch(`${getApiUrl()}/reset`, { method: 'POST' });
-  } catch (e) {}
-
   localStorage.removeItem('IPO_STORE_PARTIES');
   localStorage.removeItem('IPO_STORE_IPOS');
   localStorage.removeItem('IPO_STORE_APPLICATIONS');
@@ -86,7 +93,6 @@ export const clearAllStoreData = async () => {
 // SAVE PARTY
 export const saveParty = async (partyData) => {
   const newParty = {
-    id: partyData.id || `p-${Date.now()}`,
     user_email: partyData.user_email || null,
     name: partyData.name,
     pan: partyData.pan || '',
@@ -98,14 +104,17 @@ export const saveParty = async (partyData) => {
     created_at: partyData.created_at || new Date().toISOString()
   };
 
-  try {
-    await fetch(`${getApiUrl()}/parties`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newParty)
-    });
-  } catch (e) {}
+  if (partyData.id && !partyData.id.startsWith('p-')) {
+    newParty.id = partyData.id;
+  }
 
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('parties').upsert(newParty).select().single();
+    if (error) { console.error(error); return newParty; }
+    return data;
+  }
+
+  if (!newParty.id) newParty.id = partyData.id || `p-${Date.now()}`;
   const current = getLocalData('PARTIES', []);
   const index = current.findIndex(p => p.id === newParty.id);
   if (index >= 0) current[index] = newParty;
@@ -117,10 +126,10 @@ export const saveParty = async (partyData) => {
 
 // DELETE PARTY
 export const deleteParty = async (id) => {
-  try {
-    await fetch(`${getApiUrl()}/parties/${id}`, { method: 'DELETE' });
-  } catch (e) {}
-
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('parties').delete().eq('id', id);
+    return;
+  }
   const current = getLocalData('PARTIES', []);
   const updated = current.filter(p => p.id !== id);
   setLocalData('PARTIES', updated);
@@ -129,7 +138,6 @@ export const deleteParty = async (id) => {
 // SAVE IPO
 export const saveIPO = async (ipoData) => {
   const newIPO = {
-    id: ipoData.id || `ipo-${Date.now()}`,
     user_email: ipoData.user_email || null,
     company_name: ipoData.company_name,
     symbol: ipoData.symbol || '',
@@ -143,14 +151,17 @@ export const saveIPO = async (ipoData) => {
     created_at: ipoData.created_at || new Date().toISOString()
   };
 
-  try {
-    await fetch(`${getApiUrl()}/ipos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newIPO)
-    });
-  } catch (e) {}
+  if (ipoData.id && !ipoData.id.startsWith('ipo-')) {
+    newIPO.id = ipoData.id;
+  }
 
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('ipos').upsert(newIPO).select().single();
+    if (error) { console.error(error); return newIPO; }
+    return data;
+  }
+
+  if (!newIPO.id) newIPO.id = ipoData.id || `ipo-${Date.now()}`;
   const current = getLocalData('IPOS', []);
   const index = current.findIndex(i => i.id === newIPO.id);
   if (index >= 0) current[index] = newIPO;
@@ -162,10 +173,10 @@ export const saveIPO = async (ipoData) => {
 
 // DELETE IPO
 export const deleteIPO = async (id) => {
-  try {
-    await fetch(`${getApiUrl()}/ipos/${id}`, { method: 'DELETE' });
-  } catch (e) {}
-
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('ipos').delete().eq('id', id);
+    return;
+  }
   const current = getLocalData('IPOS', []);
   const updated = current.filter(i => i.id !== id);
   setLocalData('IPOS', updated);
@@ -178,7 +189,6 @@ export const saveApplication = async (appData) => {
   const appDate = appData.application_date || new Date().toISOString();
 
   const newApp = {
-    id: appData.id || `app-${Date.now()}`,
     user_email: appData.user_email || null,
     ipo_id: appData.ipo_id,
     party_id: appData.party_id,
@@ -198,28 +208,34 @@ export const saveApplication = async (appData) => {
     created_at: appData.created_at || new Date().toISOString()
   };
 
-  try {
-    await fetch(`${getApiUrl()}/applications`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newApp)
-    });
-  } catch (e) {}
-
-  const currentApps = getLocalData('APPLICATIONS', []);
+  if (appData.id && !appData.id.startsWith('app-')) {
+    newApp.id = appData.id;
+  }
+  
   const isNew = !appData.id;
-  const index = currentApps.findIndex(a => a.id === newApp.id);
-  if (index >= 0) currentApps[index] = newApp;
-  else currentApps.unshift(newApp);
-  setLocalData('APPLICATIONS', currentApps);
+  let finalApp = newApp;
+
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('ipo_applications').upsert(newApp).select().single();
+    if (error) console.error(error);
+    else finalApp = data;
+  } else {
+    if (!newApp.id) newApp.id = `app-${Date.now()}`;
+    const currentApps = getLocalData('APPLICATIONS', []);
+    const index = currentApps.findIndex(a => a.id === newApp.id);
+    if (index >= 0) currentApps[index] = newApp;
+    else currentApps.unshift(newApp);
+    setLocalData('APPLICATIONS', currentApps);
+    finalApp = newApp;
+  }
 
   if (isNew) {
     await saveTransaction({
-      user_email: newApp.user_email,
-      application_id: newApp.id,
-      from_party_id: newApp.party_id,
+      user_email: finalApp.user_email,
+      application_id: finalApp.id,
+      from_party_id: finalApp.party_id,
       to_party_id: 'p-bank',
-      amount: newApp.amount_applied,
+      amount: finalApp.amount_applied,
       transaction_type: 'IPO_APPLICATION',
       payment_mode: appData.payment_mode || 'ASBA',
       transaction_date: appDate,
@@ -227,15 +243,15 @@ export const saveApplication = async (appData) => {
     });
   }
 
-  return newApp;
+  return finalApp;
 };
 
 // DELETE APPLICATION
 export const deleteApplication = async (id) => {
-  try {
-    await fetch(`${getApiUrl()}/applications/${id}`, { method: 'DELETE' });
-  } catch (e) {}
-
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('ipo_applications').delete().eq('id', id);
+    return;
+  }
   const current = getLocalData('APPLICATIONS', []);
   const updated = current.filter(a => a.id !== id);
   setLocalData('APPLICATIONS', updated);
@@ -244,7 +260,6 @@ export const deleteApplication = async (id) => {
 // SAVE TRANSACTION
 export const saveTransaction = async (txData) => {
   const newTx = {
-    id: txData.id || `tx-${Date.now()}-${Math.floor(Math.random()*1000)}`,
     user_email: txData.user_email || null,
     application_id: txData.application_id || null,
     from_party_id: txData.from_party_id,
@@ -257,14 +272,17 @@ export const saveTransaction = async (txData) => {
     created_at: txData.created_at || new Date().toISOString()
   };
 
-  try {
-    await fetch(`${getApiUrl()}/transactions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newTx)
-    });
-  } catch (e) {}
+  if (txData.id && !txData.id.startsWith('tx-')) {
+    newTx.id = txData.id;
+  }
 
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('money_transactions').upsert(newTx).select().single();
+    if (error) { console.error(error); return newTx; }
+    return data;
+  }
+
+  if (!newTx.id) newTx.id = `tx-${Date.now()}-${Math.floor(Math.random()*1000)}`;
   const currentTxs = getLocalData('TRANSACTIONS', []);
   const index = currentTxs.findIndex(t => t.id === newTx.id);
   if (index >= 0) currentTxs[index] = newTx;
@@ -276,10 +294,10 @@ export const saveTransaction = async (txData) => {
 
 // DELETE TRANSACTION
 export const deleteTransaction = async (id) => {
-  try {
-    await fetch(`${getApiUrl()}/transactions/${id}`, { method: 'DELETE' });
-  } catch (e) {}
-
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('money_transactions').delete().eq('id', id);
+    return;
+  }
   const current = getLocalData('TRANSACTIONS', []);
   const updated = current.filter(t => t.id !== id);
   setLocalData('TRANSACTIONS', updated);
@@ -287,13 +305,23 @@ export const deleteTransaction = async (id) => {
 
 // UPDATE ALLOTMENT STATUS
 export const updateAllotmentStatus = async (applicationId, status, allottedLots = 0, profit = 0) => {
-  const apps = getLocalData('APPLICATIONS', []);
-  const ipos = getLocalData('IPOS', []);
-  const app = apps.find(a => a.id === applicationId);
+  let app;
+  let ipo;
+  
+  if (isSupabaseConfigured && supabase) {
+    const { data: fetchedApp } = await supabase.from('ipo_applications').select('*').eq('id', applicationId).single();
+    if (!fetchedApp) return;
+    app = fetchedApp;
+    const { data: fetchedIpo } = await supabase.from('ipos').select('*').eq('id', app.ipo_id).single();
+    ipo = fetchedIpo;
+  } else {
+    const apps = getLocalData('APPLICATIONS', []);
+    const ipos = getLocalData('IPOS', []);
+    app = apps.find(a => a.id === applicationId);
+    if (!app) return;
+    ipo = ipos.find(i => i.id === app.ipo_id);
+  }
 
-  if (!app) return;
-
-  const ipo = ipos.find(i => i.id === app.ipo_id);
   const lotSize = ipo ? ipo.lot_size : 1;
   const price = ipo ? ipo.price_per_share : (app.amount_applied / app.shares_applied);
 
@@ -397,7 +425,6 @@ export const getFinancialYear = (dateStr) => {
 // SAVE TAX CONFIG RECORD (Per party per FY)
 export const saveTaxRecord = async (taxData) => {
   const newRecord = {
-    id: taxData.id || `tr-${Date.now()}`,
     user_email: taxData.user_email || null,
     party_id: taxData.party_id,
     financial_year: taxData.financial_year,
@@ -408,14 +435,17 @@ export const saveTaxRecord = async (taxData) => {
     created_at: taxData.created_at || new Date().toISOString()
   };
 
-  try {
-    await fetch(`${getApiUrl()}/tax-records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newRecord)
-    });
-  } catch (e) {}
+  if (taxData.id && !taxData.id.startsWith('tr-')) {
+    newRecord.id = taxData.id;
+  }
 
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('tax_records').upsert(newRecord).select().single();
+    if (error) { console.error(error); return newRecord; }
+    return data;
+  }
+
+  if (!newRecord.id) newRecord.id = `tr-${Date.now()}`;
   const current = getLocalData('TAX_RECORDS', []);
   const index = current.findIndex(r => r.id === newRecord.id);
   if (index >= 0) current[index] = newRecord;
@@ -428,7 +458,6 @@ export const saveTaxRecord = async (taxData) => {
 // SAVE TAX PAYMENT LOG
 export const saveTaxPayment = async (payData) => {
   const newPay = {
-    id: payData.id || `tp-${Date.now()}`,
     user_email: payData.user_email || null,
     party_id: payData.party_id,
     financial_year: payData.financial_year,
@@ -440,63 +469,68 @@ export const saveTaxPayment = async (payData) => {
     created_at: payData.created_at || new Date().toISOString()
   };
 
-  try {
-    await fetch(`${getApiUrl()}/tax-payments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newPay)
-    });
-  } catch (e) {}
+  if (payData.id && !payData.id.startsWith('tp-')) {
+    newPay.id = payData.id;
+  }
 
-  const current = getLocalData('TAX_PAYMENTS', []);
-  const index = current.findIndex(p => p.id === newPay.id);
-  if (index >= 0) current[index] = newPay;
-  else current.unshift(newPay);
-  setLocalData('TAX_PAYMENTS', current);
+  let finalPay = newPay;
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.from('tax_payments').upsert(newPay).select().single();
+    if (error) console.error(error);
+    else finalPay = data;
+  } else {
+    if (!newPay.id) newPay.id = `tp-${Date.now()}`;
+    const current = getLocalData('TAX_PAYMENTS', []);
+    const index = current.findIndex(p => p.id === newPay.id);
+    if (index >= 0) current[index] = newPay;
+    else current.unshift(newPay);
+    setLocalData('TAX_PAYMENTS', current);
+    finalPay = newPay;
+  }
 
   // Automatically record money_transaction of type TAX_COLLECTION
   try {
     await saveTransaction({
-      user_email: payData.user_email,
-      from_party_id: payData.party_id,
+      user_email: finalPay.user_email,
+      from_party_id: finalPay.party_id,
       to_party_id: 'p-bank',
-      amount: newPay.amount,
+      amount: finalPay.amount,
       transaction_type: 'TAX_COLLECTION',
-      payment_mode: newPay.payment_mode,
-      transaction_date: newPay.payment_date,
-      notes: `ITR Tax Collection for ${newPay.financial_year}. Ref: ${newPay.reference_no || 'N/A'}`
+      payment_mode: finalPay.payment_mode,
+      transaction_date: finalPay.payment_date,
+      notes: `ITR Tax Collection for ${finalPay.financial_year}. Ref: ${finalPay.reference_no || 'N/A'}`
     });
   } catch (e) {}
 
-  return newPay;
+  return finalPay;
 };
 
 // DELETE TAX PAYMENT LOG
 export const deleteTaxPayment = async (id) => {
-  try {
-    await fetch(`${getApiUrl()}/tax-payments/${id}`, { method: 'DELETE' });
-  } catch (e) {}
-
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('tax_payments').delete().eq('id', id);
+    return;
+  }
   const current = getLocalData('TAX_PAYMENTS', []);
   const updated = current.filter(p => p.id !== id);
   setLocalData('TAX_PAYMENTS', updated);
 };
 
-// CLEAR / RESET ALL TAX PAYMENTS (Optionally filtered by partyId and FY)
+// CLEAR / RESET ALL TAX PAYMENTS
 export const clearAllTaxPayments = async (partyId = null, financialYear = null) => {
-  const current = getLocalData('TAX_PAYMENTS', []);
-  const toDelete = current.filter(p => {
-    if (partyId && p.party_id !== partyId) return false;
-    if (financialYear && financialYear !== 'ALL' && p.financial_year !== financialYear) return false;
-    return true;
-  });
-
-  for (const pay of toDelete) {
-    try {
-      await fetch(`${getApiUrl()}/tax-payments/${pay.id}`, { method: 'DELETE' });
-    } catch (e) {}
+  if (isSupabaseConfigured && supabase) {
+    let query = supabase.from('tax_payments').delete();
+    if (partyId) query = query.eq('party_id', partyId);
+    if (financialYear && financialYear !== 'ALL') query = query.eq('financial_year', financialYear);
+    await query;
+    return;
   }
 
-  const remaining = current.filter(p => !toDelete.some(td => td.id === p.id));
+  const current = getLocalData('TAX_PAYMENTS', []);
+  const remaining = current.filter(p => {
+    if (partyId && p.party_id === partyId) return false;
+    if (financialYear && financialYear !== 'ALL' && p.financial_year === financialYear) return false;
+    return true;
+  });
   setLocalData('TAX_PAYMENTS', remaining);
 };

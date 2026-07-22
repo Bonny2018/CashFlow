@@ -78,11 +78,38 @@ CREATE TABLE IF NOT EXISTS public.money_transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.tax_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
+    financial_year VARCHAR(20) NOT NULL,
+    tax_rate NUMERIC(5,2) DEFAULT 20.00,
+    fee_per_allotment NUMERIC(10,2) DEFAULT 0.00,
+    gain_override NUMERIC(12,2),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.tax_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    party_id UUID REFERENCES public.parties(id) ON DELETE CASCADE,
+    financial_year VARCHAR(20) NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    payment_mode VARCHAR(50) DEFAULT 'UPI',
+    payment_date TIMESTAMPTZ DEFAULT NOW(),
+    reference_no VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- RLS POLICIES
 ALTER TABLE public.parties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ipos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ipo_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.money_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tax_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tax_payments ENABLE ROW LEVEL SECURITY;
 
 -- POLICIES: Everyone can read, but only Admin can modify
 CREATE POLICY "Public read access for parties" ON public.parties FOR SELECT USING (true);
