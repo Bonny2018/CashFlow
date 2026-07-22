@@ -39,6 +39,10 @@ export default function PartiesLedger({
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
   const openAddParty = () => {
+    if (!isAdmin) {
+      alert('Access Denied: Only Admin (mohitsjain12104@gmail.com) has permission to add party accounts.');
+      return;
+    }
     setEditingParty(null);
     setName(''); setPan(''); setDematNo(''); setBankName(''); setBankAccount(''); setUpiId(''); setInitialBalance(0);
     setIsPartyModalOpen(true);
@@ -115,8 +119,17 @@ export default function PartiesLedger({
       </div>
 
       {/* Party Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {partiesWithBalances.map((party) => {
+      {partiesWithBalances.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 glass-card rounded-2xl border border-slate-800 text-center">
+          <Users className="w-16 h-16 text-slate-600 mb-4" />
+          <h3 className="text-white font-display font-semibold text-lg mb-2">No Party Accounts Found</h3>
+          <p className="text-slate-400 text-sm max-w-md">
+            The database is currently empty. Please login as Admin (mohitsjain12104@gmail.com) to add new party members and manage their accounts.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {partiesWithBalances.map((party) => {
           return (
             <div 
               key={party.id}
@@ -209,6 +222,7 @@ export default function PartiesLedger({
           );
         })}
       </div>
+      )}
 
       {/* MODAL 1: ADD / EDIT PARTY */}
       {isPartyModalOpen && (
