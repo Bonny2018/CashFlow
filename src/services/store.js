@@ -234,7 +234,7 @@ export const saveApplication = async (appData) => {
       user_email: finalApp.user_email,
       application_id: finalApp.id,
       from_party_id: finalApp.party_id,
-      to_party_id: 'p-bank',
+      to_party_id: null,
       amount: finalApp.amount_applied,
       transaction_type: 'IPO_APPLICATION',
       payment_mode: appData.payment_mode || 'ASBA',
@@ -358,7 +358,7 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
   if (refundAmount > 0) {
     await saveTransaction({
       application_id: app.id,
-      from_party_id: 'p-bank',
+      from_party_id: null,
       to_party_id: app.party_id,
       amount: refundAmount,
       transaction_type: 'IPO_REFUND',
@@ -371,7 +371,7 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
   if (profitLoss > 0) {
     await saveTransaction({
       application_id: app.id,
-      from_party_id: 'p-bank',
+      from_party_id: null,
       to_party_id: app.party_id,
       amount: profitLoss,
       transaction_type: 'PROFIT_DISTRIBUTION',
@@ -493,7 +493,7 @@ export const saveTaxPayment = async (payData) => {
     await saveTransaction({
       user_email: finalPay.user_email,
       from_party_id: finalPay.party_id,
-      to_party_id: 'p-bank',
+      to_party_id: null,
       amount: finalPay.amount,
       transaction_type: 'TAX_COLLECTION',
       payment_mode: finalPay.payment_mode,
