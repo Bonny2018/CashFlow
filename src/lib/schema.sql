@@ -108,21 +108,21 @@ ALTER TABLE public.money_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tax_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tax_payments ENABLE ROW LEVEL SECURITY;
 
--- POLICIES: Users can access their own data or public demo data
-CREATE POLICY "Users can manage their own parties" ON public.parties
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+-- POLICIES: Everyone can read, but only Admin can modify
+CREATE POLICY "Public read access for parties" ON public.parties FOR SELECT USING (true);
+CREATE POLICY "Admin write access for parties" ON public.parties FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
 
-CREATE POLICY "Users can manage their own ipos" ON public.ipos
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+CREATE POLICY "Public read access for ipos" ON public.ipos FOR SELECT USING (true);
+CREATE POLICY "Admin write access for ipos" ON public.ipos FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
 
-CREATE POLICY "Users can manage their own ipo_applications" ON public.ipo_applications
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+CREATE POLICY "Public read access for ipo_applications" ON public.ipo_applications FOR SELECT USING (true);
+CREATE POLICY "Admin write access for ipo_applications" ON public.ipo_applications FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
 
-CREATE POLICY "Users can manage their own money_transactions" ON public.money_transactions
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+CREATE POLICY "Public read access for money_transactions" ON public.money_transactions FOR SELECT USING (true);
+CREATE POLICY "Admin write access for money_transactions" ON public.money_transactions FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
 
-CREATE POLICY "Users can manage their own tax_records" ON public.tax_records
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+CREATE POLICY "Public read access for tax_records" ON public.tax_records FOR SELECT USING (true);
+CREATE POLICY "Admin write access for tax_records" ON public.tax_records FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
 
-CREATE POLICY "Users can manage their own tax_payments" ON public.tax_payments
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+CREATE POLICY "Public read access for tax_payments" ON public.tax_payments FOR SELECT USING (true);
+CREATE POLICY "Admin write access for tax_payments" ON public.tax_payments FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));

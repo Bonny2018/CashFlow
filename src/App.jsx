@@ -102,7 +102,7 @@ export default function App() {
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = true; // All members have full collaborative access to view and manage entries
+  const isAdmin = userEmail === 'mohitsjain12104@gmail.com' || userEmail === 'mohitsjain12104@gmail';
 
   // Real-World Shared Ledger: ALL Members & Visitors see ALL entries when visiting the site
   const scopedParties = React.useMemo(() => parties, [parties]);
@@ -188,6 +188,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         user={user}
+        isAdmin={isAdmin}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         isSupabase={isSupabaseLive}

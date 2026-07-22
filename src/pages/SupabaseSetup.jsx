@@ -84,10 +84,18 @@ ALTER TABLE public.ipos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ipo_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.money_transactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage parties" ON public.parties FOR ALL USING (true);
-CREATE POLICY "Users can manage ipos" ON public.ipos FOR ALL USING (true);
-CREATE POLICY "Users can manage ipo_applications" ON public.ipo_applications FOR ALL USING (true);
-CREATE POLICY "Users can manage money_transactions" ON public.money_transactions FOR ALL USING (true);
+-- POLICIES: Everyone can read, but only Admin can modify
+CREATE POLICY "Public read access for parties" ON public.parties FOR SELECT USING (true);
+CREATE POLICY "Admin write access for parties" ON public.parties FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
+
+CREATE POLICY "Public read access for ipos" ON public.ipos FOR SELECT USING (true);
+CREATE POLICY "Admin write access for ipos" ON public.ipos FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
+
+CREATE POLICY "Public read access for ipo_applications" ON public.ipo_applications FOR SELECT USING (true);
+CREATE POLICY "Admin write access for ipo_applications" ON public.ipo_applications FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
+
+CREATE POLICY "Public read access for money_transactions" ON public.money_transactions FOR SELECT USING (true);
+CREATE POLICY "Admin write access for money_transactions" ON public.money_transactions FOR ALL USING (auth.jwt() ->> 'email' IN ('mohitsjain12104@gmail.com', 'mohitsjain12104@gmail'));
 `;
 
 export default function SupabaseSetup() {

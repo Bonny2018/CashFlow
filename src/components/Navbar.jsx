@@ -19,6 +19,7 @@ export default function Navbar({
   activeTab, 
   setActiveTab, 
   user, 
+  isAdmin,
   onOpenAuth, 
   onLogout, 
   isSupabase,
@@ -37,7 +38,6 @@ export default function Navbar({
   ];
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = userEmail.includes('mohitjain12104@gmail');
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
