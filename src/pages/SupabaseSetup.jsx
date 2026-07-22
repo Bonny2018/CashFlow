@@ -242,7 +242,7 @@ export default function SupabaseSetup() {
           </div>
 
           <p className="text-xs text-slate-400">
-            Copy and run this SQL query in your Supabase SQL Editor to instantly construct the 4 core tables: <code className="text-emerald-400">parties</code>, <code className="text-emerald-400">ipos</code>, <code className="text-emerald-400">ipo_applications</code>, and <code className="text-emerald-400">money_transactions</code>.
+            Copy and run this SQL query in your Supabase SQL Editor to instantly construct the 6 core tables: <code className="text-emerald-400">parties</code>, <code className="text-emerald-400">ipos</code>, <code className="text-emerald-400">ipo_applications</code>, <code className="text-emerald-400">money_transactions</code>, <code className="text-emerald-400">tax_records</code>, and <code className="text-emerald-400">tax_payments</code>.
           </p>
 
           <pre className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 text-[11px] font-mono text-slate-300 max-h-48 overflow-y-auto no-scrollbar">
