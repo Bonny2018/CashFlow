@@ -73,9 +73,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   };
 
   const handleQuickLoginAdmin = () => {
-    setEmail('admin@example.com');
+    setEmail('admin@gmail.com');
     setPassword('admin123');
-    handleLogin('admin@example.com', 'admin123');
+    handleLogin('admin@gmail.com', 'admin123');
   };
 
   const handleQuickLoginMember = () => {
@@ -118,7 +118,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
               <div className="truncate">
                 <span className="text-xs font-bold text-amber-300 block truncate">Admin</span>
-                <span className="text-[10px] text-slate-400 font-mono block truncate">admin@example.com</span>
+                <span className="text-[10px] text-slate-400 font-mono block truncate">admin@gmail.com</span>
               </div>
             </button>
 
@@ -152,7 +152,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com or user@domain.com"
+                placeholder="admin@gmail.com or user@domain.com"
                 required
                 className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
               />

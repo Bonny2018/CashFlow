@@ -99,7 +99,7 @@ export default function App() {
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = true; // Everyone is an admin now
+  const isAdmin = userEmail === 'admin@gmail.com';
 
   // Real-World Shared Ledger: ALL Members & Visitors see ALL entries when visiting the site
   const scopedParties = React.useMemo(() => parties, [parties]);
