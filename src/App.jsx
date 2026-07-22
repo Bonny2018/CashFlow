@@ -115,69 +115,95 @@ export default function App() {
 
   // Handlers for store updates
   const handleSaveParty = async (partyData) => {
-    await saveParty({ ...partyData, user_email: partyData.user_email || user?.email });
-    await loadData();
+    try {
+      await saveParty({ ...partyData, user_email: partyData.user_email || user?.email });
+      await loadData();
+    } catch (err) { alert(`Failed to save party: ${err.message}`); }
   };
 
   const handleDeleteParty = async (id) => {
-    await deleteParty(id);
-    await loadData();
+    try {
+      await deleteParty(id);
+      await loadData();
+    } catch (err) { alert(`Failed to delete party: ${err.message}`); }
   };
 
   const handleSaveIPO = async (ipoData) => {
-    const ipo = await saveIPO({ ...ipoData, user_email: ipoData.user_email || user?.email });
-    await loadData();
-    return ipo;
+    try {
+      const ipo = await saveIPO({ ...ipoData, user_email: ipoData.user_email || user?.email });
+      await loadData();
+      return ipo;
+    } catch (err) { alert(`Failed to save IPO: ${err.message}`); return null; }
   };
 
   const handleSaveApplication = async (appData) => {
-    await saveApplication({ ...appData, user_email: appData.user_email || user?.email });
-    await loadData();
+    try {
+      await saveApplication({ ...appData, user_email: appData.user_email || user?.email });
+      await loadData();
+    } catch (err) { alert(`Failed to save application: ${err.message}`); }
   };
 
   const handleDeleteApplication = async (id) => {
-    await deleteApplication(id);
-    await loadData();
+    try {
+      await deleteApplication(id);
+      await loadData();
+    } catch (err) { alert(`Failed to delete application: ${err.message}`); }
   };
 
   const handleSaveTransaction = async (txData) => {
-    await saveTransaction({ ...txData, user_email: txData.user_email || user?.email });
-    await loadData();
+    try {
+      await saveTransaction({ ...txData, user_email: txData.user_email || user?.email });
+      await loadData();
+    } catch (err) { alert(`Failed to save transaction: ${err.message}`); }
   };
 
   const handleDeleteTransaction = async (id) => {
-    await deleteTransaction(id);
-    await loadData();
+    try {
+      await deleteTransaction(id);
+      await loadData();
+    } catch (err) { alert(`Failed to delete transaction: ${err.message}`); }
   };
 
   const handleSaveTaxRecord = async (taxData) => {
-    await saveTaxRecord({ ...taxData, user_email: taxData.user_email || user?.email });
-    await loadData();
+    try {
+      await saveTaxRecord({ ...taxData, user_email: taxData.user_email || user?.email });
+      await loadData();
+    } catch (err) { alert(`Failed to save tax record: ${err.message}`); }
   };
 
   const handleSaveTaxPayment = async (payData) => {
-    await saveTaxPayment({ ...payData, user_email: payData.user_email || user?.email });
-    await loadData();
+    try {
+      await saveTaxPayment({ ...payData, user_email: payData.user_email || user?.email });
+      await loadData();
+    } catch (err) { alert(`Failed to save tax payment: ${err.message}`); }
   };
 
   const handleDeleteTaxPayment = async (id) => {
-    await deleteTaxPayment(id);
-    await loadData();
+    try {
+      await deleteTaxPayment(id);
+      await loadData();
+    } catch (err) { alert(`Failed to delete tax payment: ${err.message}`); }
   };
 
   const handleClearTaxPayments = async (partyId = null, FY = null) => {
-    await clearAllTaxPayments(partyId, FY);
-    await loadData();
+    try {
+      await clearAllTaxPayments(partyId, FY);
+      await loadData();
+    } catch (err) { alert(`Failed to clear tax payments: ${err.message}`); }
   };
 
   const handleUpdateStatus = async (appId, status, allottedLots, profit) => {
-    await updateAllotmentStatus(appId, status, allottedLots, profit);
-    await loadData();
+    try {
+      await updateAllotmentStatus(appId, status, allottedLots, profit);
+      await loadData();
+    } catch (err) { alert(`Failed to update status: ${err.message}`); }
   };
 
   const handleResetAllData = async () => {
-    await clearAllStoreData();
-    await loadData();
+    try {
+      await clearAllStoreData();
+      await loadData();
+    } catch (err) { alert(`Failed to reset data: ${err.message}`); }
   };
 
   return (
