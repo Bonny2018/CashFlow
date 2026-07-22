@@ -465,3 +465,22 @@ export const deleteTaxPayment = async (id) => {
   const updated = current.filter(p => p.id !== id);
   setLocalData('TAX_PAYMENTS', updated);
 };
+
+// CLEAR / RESET ALL TAX PAYMENTS (Optionally filtered by partyId and FY)
+export const clearAllTaxPayments = async (partyId = null, financialYear = null) => {
+  const current = getLocalData('TAX_PAYMENTS', []);
+  const toDelete = current.filter(p => {
+    if (partyId && p.party_id !== partyId) return false;
+    if (financialYear && financialYear !== 'ALL' && p.financial_year !== financialYear) return false;
+    return true;
+  });
+
+  for (const pay of toDelete) {
+    try {
+      await fetch(`${getApiUrl()}/tax-payments/${pay.id}`, { method: 'DELETE' });
+    } catch (e) {}
+  }
+
+  const remaining = current.filter(p => !toDelete.some(td => td.id === p.id));
+  setLocalData('TAX_PAYMENTS', remaining);
+};

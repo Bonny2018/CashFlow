@@ -22,6 +22,7 @@ import {
   saveTaxRecord,
   saveTaxPayment,
   deleteTaxPayment,
+  clearAllTaxPayments,
   updateAllotmentStatus, 
   calculatePartyBalances,
   clearAllStoreData
@@ -203,11 +204,12 @@ export default function App() {
   };
 
   const handleDeleteTaxPayment = async (id) => {
-    if (!isAdmin) {
-      alert('Access Denied: Only Admin (mohitjain12104@gmail.com) has permission to delete tax payment logs.');
-      return;
-    }
     await deleteTaxPayment(id);
+    await loadData();
+  };
+
+  const handleClearTaxPayments = async (partyId = null, FY = null) => {
+    await clearAllTaxPayments(partyId, FY);
     await loadData();
   };
 
@@ -343,6 +345,7 @@ export default function App() {
                 onSaveTaxRecord={handleSaveTaxRecord}
                 onSaveTaxPayment={handleSaveTaxPayment}
                 onDeleteTaxPayment={handleDeleteTaxPayment}
+                onClearTaxPayments={handleClearTaxPayments}
               />
             )}
 

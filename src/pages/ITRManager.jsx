@@ -36,7 +36,8 @@ export default function ITRManager({
   isAdmin = false,
   onSaveTaxRecord,
   onSaveTaxPayment,
-  onDeleteTaxPayment
+  onDeleteTaxPayment,
+  onClearTaxPayments
 }) {
   const currentFY = getFinancialYear(new Date().toISOString());
   const [selectedFY, setSelectedFY] = useState(currentFY);
@@ -410,18 +411,36 @@ export default function ITRManager({
 
         {/* Metric 3: Total Collected */}
         <div 
-          onClick={() => setStatusFilter(statusFilter === 'SETTLED_ONLY' ? 'ALL' : 'SETTLED_ONLY')}
-          className={`bg-slate-900/90 border p-5 rounded-2xl shadow-lg relative overflow-hidden group transition-all cursor-pointer ${
+          className={`bg-slate-900/90 border p-5 rounded-2xl shadow-lg relative overflow-hidden group transition-all ${
             statusFilter === 'SETTLED_ONLY' ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-slate-800 hover:border-teal-500/30'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Amount Collected So Far</span>
-            <div className="p-2 bg-teal-500/10 text-teal-400 rounded-xl">
-              <CheckCircle2 className="w-4 h-4" />
+            <span className="text-xs font-medium text-slate-400 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'SETTLED_ONLY' ? 'ALL' : 'SETTLED_ONLY')}>
+              Amount Collected So Far
+            </span>
+            <div className="flex items-center space-x-2">
+              {overallMetrics.totalCollected > 0 && onClearTaxPayments && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Are you sure you want to remove all collected tax payments for ${selectedFY} and reset Amount Collected to ₹0 (00)?`)) {
+                      await onClearTaxPayments(null, selectedFY);
+                    }
+                  }}
+                  className="px-2 py-0.5 text-[10px] font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded flex items-center space-x-1 transition-all"
+                  title="Remove all collections & reset to ₹0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Reset to ₹0</span>
+                </button>
+              )}
+              <div className="p-2 bg-teal-500/10 text-teal-400 rounded-xl cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'SETTLED_ONLY' ? 'ALL' : 'SETTLED_ONLY')}>
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'SETTLED_ONLY' ? 'ALL' : 'SETTLED_ONLY')}>
             <h3 className="text-2xl font-bold font-display text-teal-400 tracking-tight">
               {formatINR(overallMetrics.totalCollected)}
             </h3>
@@ -1104,7 +1123,23 @@ export default function ITRManager({
 
             {/* Payment Collection History Log with Exact Timestamps */}
             <div className="space-y-2">
-              <h4 className="font-semibold text-xs text-slate-300 uppercase tracking-wider">Tax Payment Collection History</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-xs text-slate-300 uppercase tracking-wider">Tax Payment Collection History</h4>
+                {statementModalParty.amountCollected > 0 && onClearTaxPayments && (
+                  <button
+                    onClick={async () => {
+                      if (window.confirm(`Clear all tax collections for ${statementModalParty.party.name} and reset to ₹0?`)) {
+                        await onClearTaxPayments(statementModalParty.party.id, selectedFY);
+                        setStatementModalParty(null);
+                      }
+                    }}
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg flex items-center space-x-1 transition-all"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Reset Collected to ₹0</span>
+                  </button>
+                )}
+              </div>
               <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -1113,7 +1148,7 @@ export default function ITRManager({
                       <th className="py-2.5 px-3">Mode</th>
                       <th className="py-2.5 px-3">Reference / UTR</th>
                       <th className="py-2.5 px-3 text-right">Amount Collected</th>
-                      {isAdmin && <th className="py-2.5 px-3 text-center">Action</th>}
+                      <th className="py-2.5 px-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
@@ -1139,22 +1174,20 @@ export default function ITRManager({
                           <td className="py-2.5 px-3 text-right font-bold text-teal-400">
                             {formatINR(pay.amount)}
                           </td>
-                          {isAdmin && (
-                            <td className="py-2.5 px-3 text-center">
-                              <button
-                                onClick={async () => {
-                                  if (window.confirm('Delete this tax payment log?')) {
-                                    await onDeleteTaxPayment(pay.id);
-                                    setStatementModalParty(null);
-                                  }
-                                }}
-                                className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all"
-                                title="Delete Log"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
-                          )}
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={async () => {
+                                if (window.confirm('Delete this tax payment log and update collected balance?')) {
+                                  await onDeleteTaxPayment(pay.id);
+                                  setStatementModalParty(null);
+                                }
+                              }}
+                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-all"
+                              title="Delete Payment Entry (Make ₹0)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
                         </tr>
                       ))
                     )}
