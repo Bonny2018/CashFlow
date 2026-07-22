@@ -27,7 +27,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           password: loginPassword,
         });
         if (error) {
-          setErrorMsg(error.message);
+          if (error.message.includes('Email not confirmed')) {
+            setErrorMsg('Please check your email inbox and click the confirmation link to verify your account before logging in.');
+          } else {
+            setErrorMsg(error.message);
+          }
           setLoading(false);
           return;
         }
@@ -38,7 +42,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           password: loginPassword,
         });
         if (error) {
-          setErrorMsg(error.message);
+          if (error.message.includes('Email not confirmed')) {
+            setErrorMsg('Please check your email inbox and click the confirmation link to verify your account before logging in.');
+          } else {
+            setErrorMsg(error.message);
+          }
           setLoading(false);
           return;
         }
