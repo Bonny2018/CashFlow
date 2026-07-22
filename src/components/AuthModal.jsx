@@ -87,17 +87,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     handleLogin(email, password);
   };
 
-  const handleQuickLoginAdmin = () => {
-    setEmail('admin@gmail.com');
-    setPassword('admin123');
-    handleLogin('admin@gmail.com', 'admin123');
-  };
-
-  const handleQuickLoginMember = () => {
-    setEmail('member1@gmail.com');
-    setPassword('user123');
-    handleLogin('member1@gmail.com', 'user123');
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
@@ -121,35 +110,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </button>
         </div>
 
-        {/* Quick Demo Login Presets */}
-        <div className="mt-4 p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
-          <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Quick Direct Logins:</span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={handleQuickLoginAdmin}
-              className="px-2.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-left transition flex items-center space-x-2"
-            >
-              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-              <div className="truncate">
-                <span className="text-xs font-bold text-amber-300 block truncate">Admin</span>
-                <span className="text-[10px] text-slate-400 font-mono block truncate">admin@gmail.com</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleQuickLoginMember}
-              className="px-2.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-left transition flex items-center space-x-2"
-            >
-              <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <div className="truncate">
-                <span className="text-xs font-bold text-emerald-300 block truncate">User / Member</span>
-                <span className="text-[10px] text-slate-400 font-mono block truncate">member1@gmail.com</span>
-              </div>
-            </button>
-          </div>
-        </div>
 
         {errorMsg && (
           <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-2 text-red-400 text-xs">
