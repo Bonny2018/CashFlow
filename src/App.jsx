@@ -84,9 +84,6 @@ export default function App() {
       const demoUser = localStorage.getItem('IPO_USER_SESSION') || localStorage.getItem('IPO_DEMO_USER');
       if (demoUser) {
         setUser(JSON.parse(demoUser));
-      } else {
-        // Auto open login modal if no user logged in
-        setIsAuthOpen(true);
       }
     }
   }, []);
@@ -102,7 +99,7 @@ export default function App() {
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = userEmail === 'mohitsjain12104@gmail.com' || userEmail === 'mohitsjain12104@gmail';
+  const isAdmin = true; // Everyone is an admin now
 
   // Real-World Shared Ledger: ALL Members & Visitors see ALL entries when visiting the site
   const scopedParties = React.useMemo(() => parties, [parties]);
