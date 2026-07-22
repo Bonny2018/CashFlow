@@ -58,21 +58,25 @@ export default function Dashboard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={onOpenNewApp}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium shadow-lg shadow-emerald-600/20 transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Apply New IPO</span>
-          </button>
-          
-          <button
-            onClick={onOpenNewTransfer}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition"
-          >
-            <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-            <span>Log Cash Flow</span>
-          </button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={onOpenNewApp}
+                className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium shadow-lg shadow-emerald-600/20 transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Apply New IPO</span>
+              </button>
+              
+              <button
+                onClick={onOpenNewTransfer}
+                className="flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition"
+              >
+                <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+                <span>Log Cash Flow</span>
+              </button>
+            </>
+          )}
 
           <button
             onClick={() => onNavigateTab('excel-grid')}
@@ -271,13 +275,15 @@ export default function Dashboard({
             ))}
           </div>
 
-          <button
-            onClick={onOpenNewParty}
-            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center justify-center space-x-1.5"
-          >
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Add New Party Member</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onOpenNewParty}
+              className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center justify-center space-x-1.5"
+            >
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Add New Party Member</span>
+            </button>
+          )}
         </div>
 
       </div>
