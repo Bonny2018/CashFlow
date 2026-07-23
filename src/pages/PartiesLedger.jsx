@@ -373,12 +373,11 @@ export default function PartiesLedger({
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="text-[11px] text-slate-400 border-b border-slate-800 uppercase font-mono">
-                      <th className="py-2 px-3">Date</th>
-                      <th className="py-2 px-3">Type</th>
-                      <th className="py-2 px-3">Direction</th>
-                      <th className="py-2 px-3 text-right">Amount (₹)</th>
-                      <th className="py-2 px-3 text-right text-emerald-400">Balance (₹)</th>
-                      <th className="py-2 px-3">Notes</th>
+                      <th className="py-2 px-3 w-[20%]">Date</th>
+                      <th className="py-2 px-3 w-[30%]">Particulars (Type & Notes)</th>
+                      <th className="py-2 px-3 text-right w-[15%] text-rose-400/80">Debit (DR)</th>
+                      <th className="py-2 px-3 text-right w-[15%] text-emerald-400/80">Credit (CR)</th>
+                      <th className="py-2 px-3 text-right w-[20%] text-teal-400/80">Balance (₹)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -389,26 +388,18 @@ export default function PartiesLedger({
                           <td className="py-2 px-3 text-slate-400 text-[11px]">
                             {new Date(tx.transaction_date).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="py-2 px-3 font-sans font-medium text-slate-200">
-                            {tx.transaction_type}
+                          <td className="py-2 px-3 font-sans text-slate-200">
+                            <span className="font-medium text-xs block mb-0.5">{tx.transaction_type}</span>
+                            {tx.notes && <span className="text-[10px] text-slate-500">{tx.notes}</span>}
                           </td>
-                          <td className="py-2 px-3 font-sans">
-                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                              isInbound ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
-                            }`}>
-                              {isInbound ? '← MONEY IN' : '→ MONEY OUT'}
-                            </span>
+                          <td className="py-2 px-3 text-right font-bold text-rose-400">
+                            {!isInbound ? formatINR(tx.amount) : '-'}
                           </td>
-                          <td className={`py-2 px-3 text-right font-bold ${
-                            isInbound ? 'text-emerald-400' : 'text-rose-400'
-                          }`}>
-                            {isInbound ? '+' : '-'}{formatINR(tx.amount)}
+                          <td className="py-2 px-3 text-right font-bold text-emerald-400">
+                            {isInbound ? formatINR(tx.amount) : '-'}
                           </td>
                           <td className="py-2 px-3 text-right font-bold text-teal-300">
                             {formatINR(tx.runningBalance)}
-                          </td>
-                          <td className="py-2 px-3 text-slate-400 text-[11px] font-sans truncate max-w-[150px]">
-                            {tx.notes || '-'}
                           </td>
                         </tr>
                       );
