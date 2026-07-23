@@ -7,13 +7,12 @@ const customKey = localStorage.getItem('IPO_SUPABASE_ANON_KEY');
 const supabaseUrl = customUrl || import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = customKey || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Valid Supabase anon key must be a proper JWT (starts with 'eyJ')
-// sb_publishable_... format keys are invalid and will cause auth/db failures
+// Valid Supabase anon key: either a JWT (eyJ...) or new publishable key (sb_publishable_...)
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
   supabaseAnonKey &&
   supabaseUrl.includes('supabase.co') &&
-  supabaseAnonKey.startsWith('eyJ')
+  (supabaseAnonKey.startsWith('eyJ') || supabaseAnonKey.startsWith('sb_publishable_'))
 );
 
 export const supabase = isSupabaseConfigured
