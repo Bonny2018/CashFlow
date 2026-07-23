@@ -418,12 +418,11 @@ export const calculatePartyBalances = (parties, transactions) => {
       if (tx.to_party_id === party.id) currentBalance += amt;
       if (tx.from_party_id === party.id) currentBalance -= amt;
 
-      // For dashboard metrics (In/Out), exclude IPO internal movements
-      // so it doesn't artificially inflate the user's cash flow totals.
-      if (tx.to_party_id === party.id && !isInternalIpoTx) {
+      // Ensure visual dashboard math (In - Out = Balance) perfectly adds up for the user
+      if (tx.to_party_id === party.id) {
         moneyReceived += amt;
       }
-      if (tx.from_party_id === party.id && !isInternalIpoTx) {
+      if (tx.from_party_id === party.id) {
         moneySent += amt;
       }
     });
