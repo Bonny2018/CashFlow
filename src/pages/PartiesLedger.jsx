@@ -94,10 +94,27 @@ export default function PartiesLedger({
     setName(''); setPan(''); setDematNo(''); setBankName(''); setBankAccount(''); setUpiId(''); setInitialBalance(0);
   };
 
-  // Get Party Specific Transactions
-  const partyTransactions = selectedParty ? transactions.filter(t => 
-    t.from_party_id === selectedParty.id || t.to_party_id === selectedParty.id
-  ) : [];
+  // Get Party Specific Transactions and Calculate Running Balance
+  const partyTransactions = React.useMemo(() => {
+    if (!selectedParty) return [];
+    const txs = transactions.filter(t => 
+      t.from_party_id === selectedParty.id || t.to_party_id === selectedParty.id
+    );
+    
+    // Sort ascending by date to calculate running balance
+    let currentBal = parseFloat(selectedParty.initial_balance || 0);
+    const sortedTxs = [...txs].sort((a, b) => new Date(a.transaction_date) - new Date(b.transaction_date));
+    
+    const txsWithBalance = sortedTxs.map(tx => {
+      const amt = parseFloat(tx.amount || 0);
+      if (tx.to_party_id === selectedParty.id) currentBal += amt;
+      if (tx.from_party_id === selectedParty.id) currentBal -= amt;
+      return { ...tx, runningBalance: currentBal };
+    });
+
+    // Return descending for display
+    return txsWithBalance.reverse();
+  }, [selectedParty, transactions]);
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -358,6 +375,7 @@ export default function PartiesLedger({
                       <th className="py-2 px-3">Type</th>
                       <th className="py-2 px-3">Direction</th>
                       <th className="py-2 px-3 text-right">Amount (₹)</th>
+                      <th className="py-2 px-3 text-right text-emerald-400">Balance (₹)</th>
                       <th className="py-2 px-3">Notes</th>
                     </tr>
                   </thead>
@@ -383,6 +401,9 @@ export default function PartiesLedger({
                             isInbound ? 'text-emerald-400' : 'text-rose-400'
                           }`}>
                             {isInbound ? '+' : '-'}{formatINR(tx.amount)}
+                          </td>
+                          <td className="py-2 px-3 text-right font-bold text-teal-300">
+                            {formatINR(tx.runningBalance)}
                           </td>
                           <td className="py-2 px-3 text-slate-400 text-[11px] font-sans truncate max-w-[150px]">
                             {tx.notes || '-'}

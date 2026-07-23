@@ -355,6 +355,15 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
 
   await saveApplication(app);
 
+  // Remove existing refund/profit transactions for this application to avoid duplicates
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('money_transactions').delete().eq('application_id', app.id).in('transaction_type', ['IPO_REFUND', 'PROFIT_DISTRIBUTION']);
+  } else {
+    const currentTxs = getLocalData('TRANSACTIONS', []);
+    const filteredTxs = currentTxs.filter(t => !(t.application_id === app.id && ['IPO_REFUND', 'PROFIT_DISTRIBUTION'].includes(t.transaction_type)));
+    setLocalData('TRANSACTIONS', filteredTxs);
+  }
+
   if (refundAmount > 0) {
     await saveTransaction({
       application_id: app.id,
@@ -387,15 +396,26 @@ export const calculatePartyBalances = (parties, transactions) => {
   return parties.map(party => {
     let moneyReceived = 0;
     let moneySent = 0;
+    let currentBalance = parseFloat(party.initial_balance || 0);
 
     transactions.forEach(tx => {
       const amt = parseFloat(tx.amount || 0);
-      if (tx.to_party_id === party.id) moneyReceived += amt;
-      if (tx.from_party_id === party.id) moneySent += amt;
+      
+      // Calculate running balance for ALL transactions
+      if (tx.to_party_id === party.id) currentBalance += amt;
+      if (tx.from_party_id === party.id) currentBalance -= amt;
+
+      // For dashboard metrics (In/Out), exclude IPO blocks and unblocks
+      // so it doesn't artificially inflate the user's cash flow totals.
+      if (tx.to_party_id === party.id && tx.transaction_type !== 'IPO_REFUND') {
+        moneyReceived += amt;
+      }
+      if (tx.from_party_id === party.id && tx.transaction_type !== 'IPO_APPLICATION') {
+        moneySent += amt;
+      }
     });
 
-    const netCashFlow = moneyReceived - moneySent;
-    const currentBalance = (parseFloat(party.initial_balance || 0)) + netCashFlow;
+    const netCashFlow = currentBalance - parseFloat(party.initial_balance || 0);
 
     return {
       ...party,
