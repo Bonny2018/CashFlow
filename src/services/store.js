@@ -229,19 +229,31 @@ export const saveApplication = async (appData) => {
     finalApp = newApp;
   }
 
-  if (isNew) {
-    await saveTransaction({
-      user_email: finalApp.user_email,
-      application_id: finalApp.id,
-      from_party_id: finalApp.party_id,
-      to_party_id: null,
-      amount: finalApp.amount_applied,
-      transaction_type: 'IPO_APPLICATION',
-      payment_mode: appData.payment_mode || 'ASBA',
-      transaction_date: appDate,
-      notes: `Application payment for ${appData.company_name || 'IPO'}`
-    });
+  // Maintain end-to-end ledger consistency by always upserting the IPO_APPLICATION transaction
+  let appTxId = undefined;
+  if (!isNew) {
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('money_transactions').select('id').eq('application_id', finalApp.id).eq('transaction_type', 'IPO_APPLICATION').single();
+      if (data) appTxId = data.id;
+    } else {
+      const currentTxs = getLocalData('TRANSACTIONS', []);
+      const existing = currentTxs.find(t => t.application_id === finalApp.id && t.transaction_type === 'IPO_APPLICATION');
+      if (existing) appTxId = existing.id;
+    }
   }
+
+  await saveTransaction({
+    id: appTxId,
+    user_email: finalApp.user_email,
+    application_id: finalApp.id,
+    from_party_id: finalApp.party_id,
+    to_party_id: null,
+    amount: finalApp.amount_applied,
+    transaction_type: 'IPO_APPLICATION',
+    payment_mode: appData.payment_mode || 'ASBA',
+    transaction_date: appDate,
+    notes: `Application payment for ${appData.company_name || 'IPO'}`
+  });
 
   return finalApp;
 };
