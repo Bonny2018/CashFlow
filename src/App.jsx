@@ -105,13 +105,18 @@ export default function App() {
   }, []);
 
   const handleLogout = async () => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+    try {
+      if (isSupabaseConfigured && supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.warn('Supabase sign out error:', err);
+    } finally {
+      localStorage.removeItem('IPO_USER_SESSION');
+      localStorage.removeItem('IPO_DEMO_USER');
+      setUser(null);
+      setIsAuthOpen(true);
     }
-    localStorage.removeItem('IPO_USER_SESSION');
-    localStorage.removeItem('IPO_DEMO_USER');
-    setUser(null);
-    setIsAuthOpen(true);
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
