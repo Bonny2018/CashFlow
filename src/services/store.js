@@ -355,13 +355,26 @@ export const updateAllotmentStatus = async (applicationId, status, allottedLots 
 
   await saveApplication(app);
 
-  // Remove existing refund/profit transactions for this application to avoid duplicates
+  // Remove existing refund/profit/allotment transactions for this application to avoid duplicates
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('money_transactions').delete().eq('application_id', app.id).in('transaction_type', ['IPO_REFUND', 'PROFIT_DISTRIBUTION']);
+    await supabase.from('money_transactions').delete().eq('application_id', app.id).in('transaction_type', ['IPO_REFUND', 'PROFIT_DISTRIBUTION', 'IPO_ALLOTMENT']);
   } else {
     const currentTxs = getLocalData('TRANSACTIONS', []);
-    const filteredTxs = currentTxs.filter(t => !(t.application_id === app.id && ['IPO_REFUND', 'PROFIT_DISTRIBUTION'].includes(t.transaction_type)));
+    const filteredTxs = currentTxs.filter(t => !(t.application_id === app.id && ['IPO_REFUND', 'PROFIT_DISTRIBUTION', 'IPO_ALLOTMENT'].includes(t.transaction_type)));
     setLocalData('TRANSACTIONS', filteredTxs);
+  }
+
+  if (status === 'ALLOTTED' && amountAllotted > 0) {
+    await saveTransaction({
+      application_id: app.id,
+      from_party_id: app.party_id,
+      to_party_id: null,
+      amount: amountAllotted,
+      transaction_type: 'IPO_ALLOTMENT',
+      payment_mode: 'ASBA_DEBIT',
+      transaction_date: new Date().toISOString(),
+      notes: `Shares allotted for ${ipo ? ipo.company_name : 'IPO'} (${lotsAllotted} lots)`
+    });
   }
 
   if (refundAmount > 0) {
@@ -400,17 +413,20 @@ export const calculatePartyBalances = (parties, transactions) => {
 
     transactions.forEach(tx => {
       const amt = parseFloat(tx.amount || 0);
+      const isMemo = ['IPO_APPLICATION', 'IPO_REFUND'].includes(tx.transaction_type);
       
-      // Calculate running balance for ALL transactions
-      if (tx.to_party_id === party.id) currentBalance += amt;
-      if (tx.from_party_id === party.id) currentBalance -= amt;
+      // Calculate running balance for ALL real transactions (exclude memo blocks/unblocks)
+      if (!isMemo) {
+        if (tx.to_party_id === party.id) currentBalance += amt;
+        if (tx.from_party_id === party.id) currentBalance -= amt;
+      }
 
-      // For dashboard metrics (In/Out), exclude IPO blocks and unblocks
+      // For dashboard metrics (In/Out), exclude IPO internal movements
       // so it doesn't artificially inflate the user's cash flow totals.
-      if (tx.to_party_id === party.id && tx.transaction_type !== 'IPO_REFUND') {
+      if (tx.to_party_id === party.id && !isMemo) {
         moneyReceived += amt;
       }
-      if (tx.from_party_id === party.id && tx.transaction_type !== 'IPO_APPLICATION') {
+      if (tx.from_party_id === party.id && !isMemo && tx.transaction_type !== 'IPO_ALLOTMENT') {
         moneySent += amt;
       }
     });

@@ -107,9 +107,13 @@ export default function PartiesLedger({
     
     const txsWithBalance = sortedTxs.map(tx => {
       const amt = parseFloat(tx.amount || 0);
-      if (tx.to_party_id === selectedParty.id) currentBal += amt;
-      if (tx.from_party_id === selectedParty.id) currentBal -= amt;
-      return { ...tx, runningBalance: currentBal };
+      const isMemo = ['IPO_APPLICATION', 'IPO_REFUND'].includes(tx.transaction_type);
+      
+      if (!isMemo) {
+        if (tx.to_party_id === selectedParty.id) currentBal += amt;
+        if (tx.from_party_id === selectedParty.id) currentBal -= amt;
+      }
+      return { ...tx, runningBalance: currentBal, isMemo };
     });
 
     // Return descending for display
@@ -392,15 +396,19 @@ export default function PartiesLedger({
                           </td>
                           <td className="py-2 px-3 font-sans">
                             <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                              isInbound ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                              tx.isMemo 
+                                ? 'bg-amber-500/20 text-amber-300' 
+                                : isInbound 
+                                  ? 'bg-emerald-500/20 text-emerald-300' 
+                                  : 'bg-rose-500/20 text-rose-300'
                             }`}>
-                              {isInbound ? '← MONEY IN' : '→ MONEY OUT'}
+                              {tx.isMemo ? (tx.transaction_type === 'IPO_APPLICATION' ? '🔒 FUNDS BLOCKED' : '🔓 FUNDS FREED') : isInbound ? '← MONEY IN' : '→ MONEY OUT'}
                             </span>
                           </td>
                           <td className={`py-2 px-3 text-right font-bold ${
-                            isInbound ? 'text-emerald-400' : 'text-rose-400'
+                            tx.isMemo ? 'text-amber-400/80' : isInbound ? 'text-emerald-400' : 'text-rose-400'
                           }`}>
-                            {isInbound ? '+' : '-'}{formatINR(tx.amount)}
+                            {tx.isMemo ? 'MEMO ' : isInbound ? '+' : '-'}{formatINR(tx.amount)}
                           </td>
                           <td className="py-2 px-3 text-right font-bold text-teal-300">
                             {formatINR(tx.runningBalance)}
