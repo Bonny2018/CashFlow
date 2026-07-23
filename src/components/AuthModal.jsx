@@ -21,23 +21,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setLoading(true);
 
     // Hardcoded Admin Bypass — supports both admin accounts
+    // Trim both email and password to avoid whitespace issues
+    const cleanEmail = loginEmail.trim().toLowerCase();
+    const cleanPassword = loginPassword.trim();
+
     const ADMIN_ACCOUNTS = [
       { email: 'admin@gmail.com', password: 'admin123' },
       { email: 'mohitjain12104@gmail.com', password: 'mohit123' },
     ];
     const matchedAdmin = ADMIN_ACCOUNTS.find(
-      a => a.email === loginEmail.toLowerCase() && a.password === loginPassword
+      a => a.email === cleanEmail && a.password === cleanPassword
     );
     if (matchedAdmin) {
-      const adminUser = { email: matchedAdmin.email, id: 'admin-1' };
+      const adminUser = { email: matchedAdmin.email, id: 'admin-1', role: 'admin' };
       localStorage.setItem('IPO_USER_SESSION', JSON.stringify(adminUser));
       localStorage.setItem('IPO_DEMO_USER', JSON.stringify(adminUser));
-      onAuthSuccess(adminUser);
       setLoading(false);
+      onAuthSuccess(adminUser);
       onClose();
-      if (isSupabaseConfigured && supabase) {
-        await supabase.auth.signOut().catch(()=>({}));
-      }
       return;
     }
 
@@ -59,12 +60,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         onAuthSuccess(data.user);
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password: loginPassword,
+          email: cleanEmail,
+          password: cleanPassword,
         });
         if (error) {
           if (error.message.includes('Email not confirmed')) {
             setErrorMsg('Please check your email inbox and click the confirmation link to verify your account before logging in.');
+          } else if (error.message.includes('Invalid login credentials')) {
+            setErrorMsg('Invalid email or password. Hint: admin@gmail.com / admin123');
           } else {
             setErrorMsg(error.message);
           }
@@ -77,7 +80,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       onClose();
     } else {
       setTimeout(() => {
-        const cleanEmail = loginEmail.trim().toLowerCase();
         const localUser = { email: cleanEmail, id: `user-${Date.now()}` };
         localStorage.setItem('IPO_USER_SESSION', JSON.stringify(localUser));
         localStorage.setItem('IPO_DEMO_USER', JSON.stringify(localUser));

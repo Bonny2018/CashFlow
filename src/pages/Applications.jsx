@@ -102,18 +102,25 @@ export default function Applications({
     return app.allotment_status === activeFilter;
   });
 
-  const handleCreateNewIpo = async (e) => {
-    e.preventDefault();
-    if (!newIpoName) return;
+  const handleCreateNewIpo = async () => {
+    if (!newIpoName) { alert('Please enter the company name.'); return; }
     const ipo = await onSaveIPO({
       company_name: newIpoName,
       symbol: newIpoSymbol || newIpoName.slice(0, 5).toUpperCase(),
-      price_per_share: parseFloat(newIpoPrice),
-      lot_size: parseInt(newIpoLotSize, 10),
+      price_per_share: parseFloat(newIpoPrice) || 0,
+      lot_size: parseInt(newIpoLotSize, 10) || 1,
       status: 'OPEN'
     });
-    setSelectedIpoId(ipo.id);
-    setIsAddingNewIpo(false);
+    if (ipo && ipo.id) {
+      setSelectedIpoId(ipo.id);
+      setIsAddingNewIpo(false);
+      setNewIpoName('');
+      setNewIpoSymbol('');
+      setNewIpoPrice(500);
+      setNewIpoLotSize(30);
+    } else {
+      alert('Failed to save IPO. Please try again.');
+    }
   };
 
   const handleCreateApplication = async (e) => {
