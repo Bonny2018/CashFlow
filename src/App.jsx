@@ -37,6 +37,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Store State
   const [parties, setParties] = useState([]);
@@ -79,6 +80,7 @@ export default function App() {
           if (local) setUser(JSON.parse(local));
           else setUser(null);
         }
+        setIsAuthLoading(false);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -89,6 +91,7 @@ export default function App() {
           if (local) setUser(JSON.parse(local));
           else setUser(null);
         }
+        setIsAuthLoading(false);
       });
 
       return () => subscription.unsubscribe();
@@ -97,6 +100,7 @@ export default function App() {
       if (demoUser) {
         setUser(JSON.parse(demoUser));
       }
+      setIsAuthLoading(false);
     }
   }, []);
 
@@ -224,6 +228,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         user={user}
         isAdmin={isAdmin}
+        isAuthLoading={isAuthLoading}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         isSupabase={isSupabaseLive}

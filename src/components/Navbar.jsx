@@ -24,7 +24,8 @@ export default function Navbar({
   onLogout, 
   isSupabase,
   onOpenNewApp,
-  onOpenNewTransfer
+  onOpenNewTransfer,
+  isAuthLoading
 }) {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -102,7 +103,11 @@ export default function Navbar({
 
 
             {/* User Login/Account */}
-            {user ? (
+            {isAuthLoading ? (
+              <div className="flex items-center space-x-2 border-l border-slate-800 pl-3">
+                <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-slate-400" />
+              </div>
+            ) : user ? (
               <div className="flex items-center space-x-2 border-l border-slate-800 pl-3">
                 {isAdmin ? (
                   <div 
