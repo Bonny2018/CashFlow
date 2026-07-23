@@ -120,7 +120,7 @@ export default function App() {
   };
 
   const userEmail = (user?.email || '').trim().toLowerCase();
-  const isAdmin = userEmail === 'admin@gmail.com';
+  const isAdmin = ['admin@gmail.com', 'mohitjain12104@gmail.com'].includes(userEmail);
 
   // Real-World Shared Ledger: ALL Members & Visitors see ALL entries when visiting the site
   const scopedParties = React.useMemo(() => parties, [parties]);
