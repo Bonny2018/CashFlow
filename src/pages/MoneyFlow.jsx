@@ -120,12 +120,12 @@ export default function MoneyFlow({
                     </td>
                     <td className="py-3 px-4 font-sans font-medium text-rose-300 flex items-center space-x-1">
                       <ArrowUpRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                      <span>{fromP ? fromP.name : 'Unknown Party'}</span>
+                      <span>{fromP ? fromP.name : (tx.transaction_type.includes('IPO') ? 'IPO Clearing / Broker' : 'System')}</span>
                     </td>
                     <td className="py-3 px-4 font-sans font-medium text-emerald-300">
                       <div className="flex items-center space-x-1">
                         <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{toP ? toP.name : 'Unknown Party'}</span>
+                        <span>{toP ? toP.name : (tx.transaction_type.includes('IPO') ? 'IPO Clearing / Broker' : 'System')}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4 font-sans">
