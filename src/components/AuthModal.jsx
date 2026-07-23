@@ -20,15 +20,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     setLoading(true);
 
-    // Hardcoded Admin Bypass
-    if (loginEmail.toLowerCase() === 'admin@gmail.com' && loginPassword === 'admin123') {
-      const adminUser = { email: 'admin@gmail.com', id: 'admin-1' };
+    // Hardcoded Admin Bypass — supports both admin accounts
+    const ADMIN_ACCOUNTS = [
+      { email: 'admin@gmail.com', password: 'admin123' },
+      { email: 'mohitjain12104@gmail.com', password: 'mohit123' },
+    ];
+    const matchedAdmin = ADMIN_ACCOUNTS.find(
+      a => a.email === loginEmail.toLowerCase() && a.password === loginPassword
+    );
+    if (matchedAdmin) {
+      const adminUser = { email: matchedAdmin.email, id: 'admin-1' };
       localStorage.setItem('IPO_USER_SESSION', JSON.stringify(adminUser));
       localStorage.setItem('IPO_DEMO_USER', JSON.stringify(adminUser));
       onAuthSuccess(adminUser);
       setLoading(false);
       onClose();
-      // Ensure Supabase is signed out if we are bypassing it
       if (isSupabaseConfigured && supabase) {
         await supabase.auth.signOut().catch(()=>({}));
       }
