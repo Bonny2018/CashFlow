@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 
 // Universal Initial Seed Data for Real-World Shared Visibility across all Visitors & Members
 const DEFAULT_PARTIES = [];

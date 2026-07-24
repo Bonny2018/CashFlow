@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Bot, Sparkles } from 'lucide-react';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import Dashboard from './pages/Dashboard';
@@ -7,6 +8,7 @@ import Applications from './pages/Applications';
 import PartiesLedger from './pages/PartiesLedger';
 import MoneyFlow from './pages/MoneyFlow';
 import ITRManager from './pages/ITRManager';
+import AgentChatbot from './components/AgentChatbot';
 
 import { 
   fetchStoreData, 
@@ -36,6 +38,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
@@ -239,6 +242,7 @@ export default function App() {
         isSupabase={isSupabaseLive}
         onOpenNewApp={() => { setActiveTab('applications'); setIsAppModalOpen(true); }}
         onOpenNewTransfer={() => { setActiveTab('money-flow'); setIsTransferModalOpen(true); }}
+        onToggleChatbot={() => setIsChatbotOpen(!isChatbotOpen)}
       />
 
       {/* Main App Container */}
@@ -357,6 +361,27 @@ export default function App() {
         onClose={() => setIsAuthOpen(false)}
         onAuthSuccess={(u) => setUser(u)}
       />
+
+      {/* LangGraph & LangChain AI Assistant Chatbot */}
+      <AgentChatbot 
+        isOpen={isChatbotOpen}
+        onClose={() => setIsChatbotOpen(false)}
+        user={user}
+      />
+
+      {/* Floating AI Assistant Trigger Button */}
+      {!isChatbotOpen && (
+        <button
+          onClick={() => setIsChatbotOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex items-center space-x-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold shadow-xl shadow-emerald-500/30 transition-all duration-300 hover:scale-105 group border border-emerald-300/40"
+        >
+          <div className="relative">
+            <Bot className="w-5 h-5 text-slate-950" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-300 rounded-full animate-ping" />
+          </div>
+          <span className="text-xs font-bold tracking-tight">AI Assistant</span>
+        </button>
+      )}
 
     </div>
   );
